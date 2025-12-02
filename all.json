@@ -1,0 +1,1794 @@
+{
+  "10": {
+    "hex": "10",
+    "clk": 3,
+    "name": "PSHA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "11": {
+    "hex": "11",
+    "clk": 3,
+    "name": "PSHX",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "12": {
+    "hex": "12",
+    "clk": 3,
+    "name": "PSHY",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "13": {
+    "hex": "13",
+    "clk": 3,
+    "name": "PSHC",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "14": {
+    "hex": "14",
+    "clk": 3,
+    "name": "PULA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "15": {
+    "hex": "15",
+    "clk": 3,
+    "name": "PULX",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "16": {
+    "hex": "16",
+    "clk": 3,
+    "name": "PULY",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "17": {
+    "hex": "17",
+    "clk": 3,
+    "name": "PULC",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "18": {
+    "hex": "18",
+    "clk": 2,
+    "name": "TFR A,C",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "19": {
+    "hex": "19",
+    "clk": 2,
+    "name": "TFR C,A",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "20": {
+    "hex": "20",
+    "clk": 5,
+    "name": "BSR",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "21": {
+    "hex": "21",
+    "clk": 4,
+    "name": "BRA",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "22": {
+    "hex": "22",
+    "clk": 4,
+    "name": "BMI",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "23": {
+    "hex": "23",
+    "clk": 4,
+    "name": "BPL",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "24": {
+    "hex": "24",
+    "clk": 4,
+    "name": "BEQ",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "25": {
+    "hex": "25",
+    "clk": 4,
+    "name": "BNE",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "26": {
+    "hex": "26",
+    "clk": 4,
+    "name": "BVS",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "27": {
+    "hex": "27",
+    "clk": 4,
+    "name": "BVC",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "28": {
+    "hex": "28",
+    "clk": 4,
+    "name": "BCS",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "29": {
+    "hex": "29",
+    "clk": 4,
+    "name": "BCC",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "30": {
+    "hex": "30",
+    "clk": 3,
+    "name": "STX",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "31": {
+    "hex": "31",
+    "clk": 3,
+    "name": "STY",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "32": {
+    "hex": "32",
+    "clk": 3,
+    "name": "STSP",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "33": {
+    "hex": "33",
+    "clk": 2,
+    "name": "JMP",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "34": {
+    "hex": "34",
+    "clk": 4,
+    "name": "JSR",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "35": {
+    "hex": "35",
+    "clk": 3,
+    "name": "CLR",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "36": {
+    "hex": "36",
+    "clk": 4,
+    "name": "NEG",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "37": {
+    "hex": "37",
+    "clk": 4,
+    "name": "INC",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "38": {
+    "hex": "38",
+    "clk": 4,
+    "name": "DEC",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "39": {
+    "hex": "39",
+    "clk": 3,
+    "name": "TST",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "40": {
+    "hex": "40",
+    "clk": 3,
+    "name": "STX",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "41": {
+    "hex": "41",
+    "clk": 3,
+    "name": "STY",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "42": {
+    "hex": "42",
+    "clk": 3,
+    "name": "STSP",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "43": {
+    "hex": "43",
+    "clk": 2,
+    "name": "RTS",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "44": {
+    "hex": "44",
+    "clk": 6,
+    "name": "RTI",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "45": {
+    "hex": "45",
+    "clk": 3,
+    "name": "CLR",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "46": {
+    "hex": "46",
+    "clk": 4,
+    "name": "NEG",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "47": {
+    "hex": "47",
+    "clk": 4,
+    "name": "INC",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "48": {
+    "hex": "48",
+    "clk": 4,
+    "name": "DEC",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "49": {
+    "hex": "49",
+    "clk": 3,
+    "name": "TST",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "50": {
+    "hex": "50",
+    "clk": 3,
+    "name": "STX",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "51": {
+    "hex": "51",
+    "clk": 3,
+    "name": "STY",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "52": {
+    "hex": "52",
+    "clk": 3,
+    "name": "STSP",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "53": {
+    "hex": "53",
+    "clk": 4,
+    "name": "JMP",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "54": {
+    "hex": "54",
+    "clk": 5,
+    "name": "JSR",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "55": {
+    "hex": "55",
+    "clk": 3,
+    "name": "CLR",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "56": {
+    "hex": "56",
+    "clk": 4,
+    "name": "NEG",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "57": {
+    "hex": "57",
+    "clk": 4,
+    "name": "INC",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "58": {
+    "hex": "58",
+    "clk": 4,
+    "name": "DEC",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "59": {
+    "hex": "59",
+    "clk": 3,
+    "name": "TST",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "60": {
+    "hex": "60",
+    "clk": 3,
+    "name": "STX",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "61": {
+    "hex": "61",
+    "clk": 3,
+    "name": "STY",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "62": {
+    "hex": "62",
+    "clk": 3,
+    "name": "STSP",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "63": {
+    "hex": "63",
+    "clk": 4,
+    "name": "JMP",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "64": {
+    "hex": "64",
+    "clk": 5,
+    "name": "JSR",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "65": {
+    "hex": "65",
+    "clk": 3,
+    "name": "CLR",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "66": {
+    "hex": "66",
+    "clk": 4,
+    "name": "NEG",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "67": {
+    "hex": "67",
+    "clk": 4,
+    "name": "INC",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "68": {
+    "hex": "68",
+    "clk": 4,
+    "name": "DEC",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "69": {
+    "hex": "69",
+    "clk": 3,
+    "name": "TST",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "70": {
+    "hex": "70",
+    "clk": 3,
+    "name": "STX",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "71": {
+    "hex": "71",
+    "clk": 3,
+    "name": "STY",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "72": {
+    "hex": "72",
+    "clk": 3,
+    "name": "STSP",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "73": {
+    "hex": "73",
+    "clk": 4,
+    "name": "JMP",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "74": {
+    "hex": "74",
+    "clk": 5,
+    "name": "JSR",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "75": {
+    "hex": "75",
+    "clk": 3,
+    "name": "CLR",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "76": {
+    "hex": "76",
+    "clk": 4,
+    "name": "NEG",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "77": {
+    "hex": "77",
+    "clk": 4,
+    "name": "INC",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "78": {
+    "hex": "78",
+    "clk": 4,
+    "name": "DEC",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "79": {
+    "hex": "79",
+    "clk": 3,
+    "name": "TST",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "80": {
+    "hex": "80",
+    "clk": 3,
+    "name": "STX",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "81": {
+    "hex": "81",
+    "clk": 3,
+    "name": "STY",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "82": {
+    "hex": "82",
+    "clk": 3,
+    "name": "STSP",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "83": {
+    "hex": "83",
+    "clk": 4,
+    "name": "JMP",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "84": {
+    "hex": "84",
+    "clk": 5,
+    "name": "JSR",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "85": {
+    "hex": "85",
+    "clk": 3,
+    "name": "CLR",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "86": {
+    "hex": "86",
+    "clk": 4,
+    "name": "NEG",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "87": {
+    "hex": "87",
+    "clk": 4,
+    "name": "INC",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "88": {
+    "hex": "88",
+    "clk": 4,
+    "name": "DEC",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "89": {
+    "hex": "89",
+    "clk": 3,
+    "name": "TST",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "90": {
+    "hex": "90",
+    "clk": 2,
+    "name": "LDX",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "91": {
+    "hex": "91",
+    "clk": 2,
+    "name": "LDY",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "92": {
+    "hex": "92",
+    "clk": 2,
+    "name": "LDSP",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "93": {
+    "hex": "93",
+    "clk": 4,
+    "name": "SBCA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "94": {
+    "hex": "94",
+    "clk": 4,
+    "name": "SUBA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "95": {
+    "hex": "95",
+    "clk": 4,
+    "name": "ADCA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "96": {
+    "hex": "96",
+    "clk": 4,
+    "name": "ADDA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "97": {
+    "hex": "97",
+    "clk": 3,
+    "name": "CMPA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "98": {
+    "hex": "98",
+    "clk": 3,
+    "name": "BITA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "99": {
+    "hex": "99",
+    "clk": 4,
+    "name": "ANDA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "00": {
+    "hex": "00",
+    "clk": 2,
+    "name": "NOP",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "a0": {
+    "hex": "a0",
+    "clk": 3,
+    "name": "LDX",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b0": {
+    "hex": "b0",
+    "clk": 3,
+    "name": "LDX",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c0": {
+    "hex": "c0",
+    "clk": 3,
+    "name": "LDX",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d0": {
+    "hex": "d0",
+    "clk": 3,
+    "name": "LDX",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e0": {
+    "hex": "e0",
+    "clk": null,
+    "name": "",
+    "bytes": null,
+    "mode": ""
+  },
+  "f0": {
+    "hex": "f0",
+    "clk": 2,
+    "name": "LDA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "01": {
+    "hex": "01",
+    "clk": 4,
+    "name": "ANDCC",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "a1": {
+    "hex": "a1",
+    "clk": 3,
+    "name": "LDY",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b1": {
+    "hex": "b1",
+    "clk": 3,
+    "name": "LDY",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c1": {
+    "hex": "c1",
+    "clk": 3,
+    "name": "LDY",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d1": {
+    "hex": "d1",
+    "clk": 3,
+    "name": "LDY",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e1": {
+    "hex": "e1",
+    "clk": 3,
+    "name": "STA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "f1": {
+    "hex": "f1",
+    "clk": 3,
+    "name": "LDA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "02": {
+    "hex": "02",
+    "clk": 4,
+    "name": "ORCC",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "a2": {
+    "hex": "a2",
+    "clk": 3,
+    "name": "LDSP",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b2": {
+    "hex": "b2",
+    "clk": 3,
+    "name": "LDSP",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c2": {
+    "hex": "c2",
+    "clk": 3,
+    "name": "LDSP",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d2": {
+    "hex": "d2",
+    "clk": 3,
+    "name": "LDSP",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e2": {
+    "hex": "e2",
+    "clk": 3,
+    "name": "STA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "f2": {
+    "hex": "f2",
+    "clk": 3,
+    "name": "LDA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "03": {
+    "hex": "03",
+    "clk": null,
+    "name": "",
+    "bytes": null,
+    "mode": ""
+  },
+  "a3": {
+    "hex": "a3",
+    "clk": 5,
+    "name": "SBCA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b3": {
+    "hex": "b3",
+    "clk": 5,
+    "name": "SBCA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c3": {
+    "hex": "c3",
+    "clk": 5,
+    "name": "SBCA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d3": {
+    "hex": "d3",
+    "clk": 5,
+    "name": "SBCA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e3": {
+    "hex": "e3",
+    "clk": 3,
+    "name": "STA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "f3": {
+    "hex": "f3",
+    "clk": 3,
+    "name": "LDA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "04": {
+    "hex": "04",
+    "clk": null,
+    "name": "",
+    "bytes": null,
+    "mode": ""
+  },
+  "a4": {
+    "hex": "a4",
+    "clk": 5,
+    "name": "SUBA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b4": {
+    "hex": "b4",
+    "clk": 5,
+    "name": "SUBA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c4": {
+    "hex": "c4",
+    "clk": 5,
+    "name": "SUBA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d4": {
+    "hex": "d4",
+    "clk": 5,
+    "name": "SUBA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e4": {
+    "hex": "e4",
+    "clk": 3,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "f4": {
+    "hex": "f4",
+    "clk": 3,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "05": {
+    "hex": "05",
+    "clk": 3,
+    "name": "CLRA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "a5": {
+    "hex": "a5",
+    "clk": 5,
+    "name": "ADCA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b5": {
+    "hex": "b5",
+    "clk": 5,
+    "name": "ADCA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c5": {
+    "hex": "c5",
+    "clk": "x",
+    "name": "ADCA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d5": {
+    "hex": "d5",
+    "clk": 5,
+    "name": "ADCA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e5": {
+    "hex": "e5",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "x+"
+  },
+  "f5": {
+    "hex": "f5",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "x+"
+  },
+  "06": {
+    "hex": "06",
+    "clk": 3,
+    "name": "NEGA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "a6": {
+    "hex": "a6",
+    "clk": 5,
+    "name": "ADDA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b6": {
+    "hex": "b6",
+    "clk": 5,
+    "name": "ADDA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c6": {
+    "hex": "c6",
+    "clk": 5,
+    "name": "ADDA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d6": {
+    "hex": "d6",
+    "clk": 5,
+    "name": "ADDA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e6": {
+    "hex": "e6",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "x-"
+  },
+  "f6": {
+    "hex": "f6",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "x-"
+  },
+  "07": {
+    "hex": "07",
+    "clk": 3,
+    "name": "INCA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "a7": {
+    "hex": "a7",
+    "clk": 4,
+    "name": "CMPA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b7": {
+    "hex": "b7",
+    "clk": 4,
+    "name": "CMPA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c7": {
+    "hex": "c7",
+    "clk": 4,
+    "name": "CMPA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d7": {
+    "hex": "d7",
+    "clk": 4,
+    "name": "CMPA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e7": {
+    "hex": "e7",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "+x"
+  },
+  "f7": {
+    "hex": "f7",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "+x"
+  },
+  "08": {
+    "hex": "08",
+    "clk": 3,
+    "name": "DECA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "a8": {
+    "hex": "a8",
+    "clk": 4,
+    "name": "BITA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b8": {
+    "hex": "b8",
+    "clk": 4,
+    "name": "BITA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c8": {
+    "hex": "c8",
+    "clk": 4,
+    "name": "BITA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d8": {
+    "hex": "d8",
+    "clk": 4,
+    "name": "BITA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e8": {
+    "hex": "e8",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "-x"
+  },
+  "f8": {
+    "hex": "f8",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "-x"
+  },
+  "09": {
+    "hex": "09",
+    "clk": 2,
+    "name": "TSTA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "a9": {
+    "hex": "a9",
+    "clk": 5,
+    "name": "ANDA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "b9": {
+    "hex": "b9",
+    "clk": 5,
+    "name": "ANDA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "c9": {
+    "hex": "c9",
+    "clk": 5,
+    "name": "ANDA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "d9": {
+    "hex": "d9",
+    "clk": 5,
+    "name": "ANDA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "e9": {
+    "hex": "e9",
+    "clk": 3,
+    "name": "STA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "f9": {
+    "hex": "f9",
+    "clk": 3,
+    "name": "LDA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "0a": {
+    "hex": "0a",
+    "clk": 3,
+    "name": "COMA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "1a": {
+    "hex": "1a",
+    "clk": 2,
+    "name": "TFR X,Y",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "2a": {
+    "hex": "2a",
+    "clk": 4,
+    "name": "BHI",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "3a": {
+    "hex": "3a",
+    "clk": 4,
+    "name": "COM",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "4a": {
+    "hex": "4a",
+    "clk": 4,
+    "name": "COM",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "5a": {
+    "hex": "5a",
+    "clk": 4,
+    "name": "COM",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "6a": {
+    "hex": "6a",
+    "clk": 4,
+    "name": "COM",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "7a": {
+    "hex": "7a",
+    "clk": 4,
+    "name": "COM",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "8a": {
+    "hex": "8a",
+    "clk": 4,
+    "name": "COM",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "9a": {
+    "hex": "9a",
+    "clk": 4,
+    "name": "ORA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "aa": {
+    "hex": "aa",
+    "clk": 5,
+    "name": "ORA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "ba": {
+    "hex": "ba",
+    "clk": 5,
+    "name": "ORA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "ca": {
+    "hex": "ca",
+    "clk": 5,
+    "name": "ORA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "da": {
+    "hex": "da",
+    "clk": 5,
+    "name": "ORA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "ea": {
+    "hex": "ea",
+    "clk": 3,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "fa": {
+    "hex": "fa",
+    "clk": 3,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "0b": {
+    "hex": "0b",
+    "clk": 3,
+    "name": "LSLA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "1b": {
+    "hex": "1b",
+    "clk": 2,
+    "name": "TFR Y,X",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "2b": {
+    "hex": "2b",
+    "clk": 4,
+    "name": "BLS",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "3b": {
+    "hex": "3b",
+    "clk": 4,
+    "name": "LSL",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "4b": {
+    "hex": "4b",
+    "clk": 4,
+    "name": "LSL",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "5b": {
+    "hex": "5b",
+    "clk": 4,
+    "name": "LSL",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "6b": {
+    "hex": "6b",
+    "clk": 4,
+    "name": "LSL",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "7b": {
+    "hex": "7b",
+    "clk": 4,
+    "name": "LSL",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "8b": {
+    "hex": "8b",
+    "clk": 4,
+    "name": "LSL",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "9b": {
+    "hex": "9b",
+    "clk": 4,
+    "name": "EORA",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "ab": {
+    "hex": "ab",
+    "clk": 5,
+    "name": "EORA",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "bb": {
+    "hex": "bb",
+    "clk": 5,
+    "name": "EORA",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "cb": {
+    "hex": "cb",
+    "clk": 5,
+    "name": "EORA",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "db": {
+    "hex": "db",
+    "clk": 5,
+    "name": "EORA",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "eb": {
+    "hex": "eb",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "y+"
+  },
+  "fb": {
+    "hex": "fb",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "y+"
+  },
+  "0c": {
+    "hex": "0c",
+    "clk": 3,
+    "name": "LSRA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "1c": {
+    "hex": "1c",
+    "clk": 2,
+    "name": "TFR X,S",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "2c": {
+    "hex": "2c",
+    "clk": 4,
+    "name": "BGT",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "3c": {
+    "hex": "3c",
+    "clk": 4,
+    "name": "LSR",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "4c": {
+    "hex": "4c",
+    "clk": 4,
+    "name": "LSR",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "5c": {
+    "hex": "5c",
+    "clk": 4,
+    "name": "LSR",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "6c": {
+    "hex": "6c",
+    "clk": 4,
+    "name": "LSR",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "7c": {
+    "hex": "7c",
+    "clk": 4,
+    "name": "LSR",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "8c": {
+    "hex": "8c",
+    "clk": 4,
+    "name": "LSR",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "9c": {
+    "hex": "9c",
+    "clk": 3,
+    "name": "CMPX",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "ac": {
+    "hex": "ac",
+    "clk": 4,
+    "name": "CMPX",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "bc": {
+    "hex": "bc",
+    "clk": 4,
+    "name": "CMPX",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "cc": {
+    "hex": "cc",
+    "clk": 4,
+    "name": "LEAX",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "dc": {
+    "hex": "dc",
+    "clk": 4,
+    "name": "LEAX",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "ec": {
+    "hex": "ec",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "y-"
+  },
+  "fc": {
+    "hex": "fc",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "y-"
+  },
+  "0d": {
+    "hex": "0d",
+    "clk": 3,
+    "name": "ROLA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "1d": {
+    "hex": "1d",
+    "clk": 2,
+    "name": "TFR S,X",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "2d": {
+    "hex": "2d",
+    "clk": 4,
+    "name": "BGE",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "3d": {
+    "hex": "3d",
+    "clk": 4,
+    "name": "ROL",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "4d": {
+    "hex": "4d",
+    "clk": 4,
+    "name": "ROL",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "5d": {
+    "hex": "5d",
+    "clk": 4,
+    "name": "ROL",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "6d": {
+    "hex": "6d",
+    "clk": 4,
+    "name": "ROL",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "7d": {
+    "hex": "7d",
+    "clk": 4,
+    "name": "ROL",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "8d": {
+    "hex": "8d",
+    "clk": 4,
+    "name": "ROL",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "9d": {
+    "hex": "9d",
+    "clk": 3,
+    "name": "CMPY",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "ad": {
+    "hex": "ad",
+    "clk": 4,
+    "name": "CMPY",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "bd": {
+    "hex": "bd",
+    "clk": 4,
+    "name": "CMPY",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "cd": {
+    "hex": "cd",
+    "clk": 4,
+    "name": "LEAY",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "dd": {
+    "hex": "dd",
+    "clk": 4,
+    "name": "LEAY",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "ed": {
+    "hex": "ed",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "+y"
+  },
+  "fd": {
+    "hex": "fd",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "+y"
+  },
+  "0e": {
+    "hex": "0e",
+    "clk": 3,
+    "name": "RORA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "1e": {
+    "hex": "1e",
+    "clk": 2,
+    "name": "TFR Y,S",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "2e": {
+    "hex": "2e",
+    "clk": 4,
+    "name": "BLE",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "3e": {
+    "hex": "3e",
+    "clk": 4,
+    "name": "ROR",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "4e": {
+    "hex": "4e",
+    "clk": 4,
+    "name": "ROR",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "5e": {
+    "hex": "5e",
+    "clk": 4,
+    "name": "ROR",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "6e": {
+    "hex": "6e",
+    "clk": 4,
+    "name": "ROR",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "7e": {
+    "hex": "7e",
+    "clk": 4,
+    "name": "ROR",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "8e": {
+    "hex": "8e",
+    "clk": 4,
+    "name": "ROR",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "9e": {
+    "hex": "9e",
+    "clk": 3,
+    "name": "CMPSP",
+    "bytes": 2,
+    "mode": "im"
+  },
+  "ae": {
+    "hex": "ae",
+    "clk": 4,
+    "name": "CMPSP",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "be": {
+    "hex": "be",
+    "clk": 4,
+    "name": "LEASP",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "ce": {
+    "hex": "ce",
+    "clk": 4,
+    "name": "LEASP",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "de": {
+    "hex": "de",
+    "clk": 4,
+    "name": "LEASP",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "ee": {
+    "hex": "ee",
+    "clk": 4,
+    "name": "STA",
+    "bytes": 1,
+    "mode": "-y"
+  },
+  "fe": {
+    "hex": "fe",
+    "clk": 4,
+    "name": "LDA",
+    "bytes": 1,
+    "mode": "-y"
+  },
+  "0f": {
+    "hex": "0f",
+    "clk": 3,
+    "name": "ASRA",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "1f": {
+    "hex": "1f",
+    "clk": 2,
+    "name": "TFR S,Y",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "2f": {
+    "hex": "2f",
+    "clk": 4,
+    "name": "BLT",
+    "bytes": 2,
+    "mode": "pc"
+  },
+  "3f": {
+    "hex": "3f",
+    "clk": 4,
+    "name": "ASR",
+    "bytes": 2,
+    "mode": "ab"
+  },
+  "4f": {
+    "hex": "4f",
+    "clk": 4,
+    "name": "ASR",
+    "bytes": 2,
+    "mode": "ns"
+  },
+  "5f": {
+    "hex": "5f",
+    "clk": 4,
+    "name": "ASR",
+    "bytes": 2,
+    "mode": "nx"
+  },
+  "6f": {
+    "hex": "6f",
+    "clk": 4,
+    "name": "ASR",
+    "bytes": 1,
+    "mode": "ax"
+  },
+  "7f": {
+    "hex": "7f",
+    "clk": 4,
+    "name": "ASR",
+    "bytes": 2,
+    "mode": "ny"
+  },
+  "8f": {
+    "hex": "8f",
+    "clk": 4,
+    "name": "ASR",
+    "bytes": 1,
+    "mode": "ay"
+  },
+  "9f": {
+    "hex": "9f",
+    "clk": 4,
+    "name": "EXG A,C",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "af": {
+    "hex": "af",
+    "clk": 4,
+    "name": "EXG X,Y",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "bf": {
+    "hex": "bf",
+    "clk": 4,
+    "name": "EXG X,S",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "cf": {
+    "hex": "cf",
+    "clk": 4,
+    "name": "EXG Y,S",
+    "bytes": 1,
+    "mode": "ih"
+  },
+  "df": {
+    "hex": "df",
+    "clk": null,
+    "name": "",
+    "bytes": null,
+    "mode": ""
+  },
+  "ef": {
+    "hex": "ef",
+    "clk": null,
+    "name": "",
+    "bytes": null,
+    "mode": ""
+  },
+  "ff": {
+    "hex": "ff",
+    "clk": null,
+    "name": "",
+    "bytes": null,
+    "mode": ""
+  }
+}
