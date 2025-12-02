@@ -83,7 +83,7 @@ impl<'a> Widget for &ProgramVisualizer<'a> {
         let [memory_area, register_area, flags_area, debug_area] = Layout::horizontal([
             Constraint::Length(45),
             Constraint::Length(26),
-            Constraint::Min(1),
+            Constraint::Length(21),
             Constraint::Min(1),
         ])
         .areas(area);

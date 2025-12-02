@@ -96,6 +96,7 @@ pub struct Program {
     debug_logs: VecDeque<String>,
     reg: RegisterStore,
     q_state: QState,
+    clock_count: u32,
     exit: bool,
 }
 
@@ -107,6 +108,7 @@ impl Default for Program {
             debug_logs: VecDeque::new(),
             reg: RegisterStore::default(),
             q_state: QState::Reset,
+            clock_count: 0,
             exit: false,
         }
     }
@@ -180,6 +182,7 @@ impl Program {
     pub fn reset(&mut self) {
         self.q_state = QState::Reset;
         self.memory = self.source_memory.clone();
+        self.step();
     }
 
     pub fn step(&mut self) {
@@ -198,25 +201,22 @@ impl Program {
             }
             QState::Execute => unreachable!(),
         }
-
-        if self.reg.pc.get() >= 100 {
-            self.exit();
-        }
     }
 
     fn next_instruction(&mut self) {
         let instruction = self.memory_at(self.reg.pc.get());
         self.reg.cc.enable(CCFlag::N);
-        self.debug_log(format!(
-            "INS: {:02x}, PC: {:02x}",
-            instruction,
-            self.reg.pc.get(),
-        ));
-        match instruction {
+        // self.debug_log(format!(
+        //     "INS: {:02x}, PC: {:02x}",
+        //     instruction,
+        //     self.reg.pc.get(),
+        // ));
+        let clock_cycles_elaped: u32 = match instruction {
             0x03 | 0x04 | 0xe0 | 0xdf | 0xef | 0xff => {
                 self.debug_log(format!("Invalid instruction: {:02x}", instruction));
+                1
             }
-            0x0 => {} // NOP
+            0x0 => 1, // NOP
             0x05 => {
                 // CLRA
                 self.reg.a.set(0);
@@ -224,6 +224,7 @@ impl Program {
                 self.reg.cc.enable(CCFlag::Z);
                 self.reg.cc.disable(CCFlag::V);
                 self.reg.cc.disable(CCFlag::C);
+                3
             }
             0xf0 => {
                 // LDA #Data
@@ -234,6 +235,7 @@ impl Program {
                 self.reg.cc.set(CCFlag::N, self.reg.a.get_bit(7));
                 self.reg.cc.set(CCFlag::Z, data == 0u8);
                 self.reg.cc.disable(CCFlag::V);
+                2
             }
             0xf1 => {
                 // LDA Addr
@@ -245,10 +247,27 @@ impl Program {
                 self.reg.cc.set(CCFlag::N, self.reg.a.get_bit(7));
                 self.reg.cc.set(CCFlag::Z, data == 0u8);
                 self.reg.cc.disable(CCFlag::V);
+                3
+            }
+            0xf2 => {
+                // LDA n, SP
+                let n = self.memory_at(self.reg.pc.get() + 1);
+                let addr = n + self.reg.sp.get();
+                let data = self.memory_at(addr);
+                self.reg.a.set(data);
+                self.reg.pc.inc();
+
+                self.reg.cc.set(CCFlag::N, self.reg.a.get_bit(7));
+                self.reg.cc.set(CCFlag::Z, data == 0u8);
+                self.reg.cc.disable(CCFlag::V);
+                3
             }
             _ => {
                 self.debug_log(format!("Not yet implemented: {:02x}", instruction));
+                1
             }
-        }
+        };
+
+        self.clock_count += clock_cycles_elaped;
     }
 }

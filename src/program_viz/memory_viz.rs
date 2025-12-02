@@ -1,8 +1,9 @@
 use ratatui::{
     buffer::Buffer,
     layout::{Constraint, Layout, Rect},
+    style::{Color, Stylize},
     symbols::{border, line},
-    text::Line,
+    text::{Line, Span, Text},
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
@@ -28,31 +29,48 @@ pub fn memory_viz(
 }
 
 fn render_address_area(program: &Program, area: Rect, buf: &mut Buffer) {
-    let addresses = (0u8..32)
-        .map(|b| format!("{:02x}\n", b * 8))
-        .collect::<String>();
+    let mut lines: Vec<Line> = Vec::with_capacity(32);
+    for row in 0..32_u8 {
+        let addr = row * 8;
+        let s = format!("{:02x}", addr);
+        let span = Span::default().content(s).fg(Color::DarkGray);
+        lines.push(Line::from(span));
+    }
+
     let block = Block::default()
         .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
         .border_set(border::ROUNDED)
         .title(Line::from("Addr"));
 
-    Paragraph::new(addresses)
+    Paragraph::new(lines)
         .centered()
         .block(block)
         .render(area, buf);
 }
 
 fn render_memory_area(program: &Program, area: Rect, buf: &mut Buffer) {
-    let mut memory_str = String::with_capacity(24 * 32);
-    for row in 0u8..32 {
-        for col in 0u8..8 {
-            let b = program.memory_at(row * 8 + col);
-            memory_str.push_str(&format!("{:02x}", b));
+    let pc = program.reg_pc().get();
+    let mut lines: Vec<Line> = Vec::with_capacity(32);
+    for row in 0..32_u8 {
+        let mut line: Vec<Span> = Vec::with_capacity(15);
+        for col in 0..8_u8 {
+            let b_idx = row * 8 + col;
+            let b = program.memory_at(b_idx);
+            let s = format!("{:02x}", b);
+            let span = if b_idx == pc {
+                Span::default().content(s).bg(Color::White).fg(Color::Black)
+            } else if b == 0 {
+                Span::default().content(s).fg(Color::DarkGray)
+            } else {
+                Span::raw(s)
+            };
+            line.push(span);
+
             if col != 7 {
-                memory_str.push(' ');
+                line.push(Span::raw(" "))
             }
         }
-        memory_str.push('\n');
+        lines.push(Line::from(line));
     }
 
     let border_set = border::Set {
@@ -68,20 +86,32 @@ fn render_memory_area(program: &Program, area: Rect, buf: &mut Buffer) {
         .border_set(border_set)
         .title(Line::from(" Memory ").centered());
 
-    Paragraph::new(memory_str)
+    Paragraph::new(lines)
         .centered()
         .block(block)
         .render(area, buf);
 }
 
 fn render_ascii_area(program: &Program, area: Rect, buf: &mut Buffer) {
-    let mut ascii_str = String::with_capacity(8 * 32);
-    for row in 0u8..32 {
-        for col in 0u8..8 {
-            let b = program.memory_at(row * 8 + col);
-            ascii_str.push(visualize_ascii(b));
+    let pc = program.reg_pc().get();
+    let mut lines: Vec<Line> = Vec::with_capacity(32);
+    for row in 0..32_u8 {
+        let mut line: Vec<Span> = Vec::with_capacity(8);
+        for col in 0..8_u8 {
+            let b_idx = row * 8 + col;
+            let b = program.memory_at(b_idx);
+            let s = visualize_ascii(b).to_string();
+
+            let span = if b_idx == pc {
+                Span::default().content(s).bg(Color::White).fg(Color::Black)
+            } else if b == 0 {
+                Span::default().content(s).fg(Color::DarkGray)
+            } else {
+                Span::raw(s)
+            };
+            line.push(span);
         }
-        ascii_str.push('\n');
+        lines.push(Line::from(line));
     }
 
     let block = Block::default()
@@ -89,7 +119,7 @@ fn render_ascii_area(program: &Program, area: Rect, buf: &mut Buffer) {
         .border_set(border::ROUNDED)
         .title(Line::from(" Ascii ").centered());
 
-    Paragraph::new(ascii_str)
+    Paragraph::new(lines)
         .centered()
         .block(block)
         .render(area, buf);
