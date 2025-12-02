@@ -162,7 +162,7 @@ impl Program {
         }
     }
 
-    fn debug_log(&mut self, msg: String) {
+    pub fn debug_log(&mut self, msg: String) {
         if self.debug_logs.len() >= 20 {
             self.debug_logs.pop_front();
         }
@@ -206,10 +206,11 @@ impl Program {
 
     fn next_instruction(&mut self) {
         let instruction = self.memory_at(self.reg.pc.get());
+        self.reg.cc.enable(CCFlag::N);
         self.debug_log(format!(
             "INS: {:02x}, PC: {:02x}",
             instruction,
-            self.reg.pc.get()
+            self.reg.pc.get(),
         ));
         match instruction {
             0x03 | 0x04 | 0xe0 | 0xdf | 0xef | 0xff => {
@@ -245,7 +246,9 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, data == 0u8);
                 self.reg.cc.disable(CCFlag::V);
             }
-            _ => todo!(" {:02x}", instruction),
+            _ => {
+                self.debug_log(format!("Not yet implemented: {:02x}", instruction));
+            }
         }
     }
 }
