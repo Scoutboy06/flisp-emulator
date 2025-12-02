@@ -14,6 +14,9 @@ fn main() {
     data[0xFF] = 0x20;
     data[0x20] = 0xf0;
     data[0x21] = 0x69;
+    data[0x22] = 0xf1;
+    data[0x23] = 0x69;
+    data[0x69] = 0x67;
     program.load_memory(&data);
 
     // let mut file = File::create("output.fmem").unwrap();

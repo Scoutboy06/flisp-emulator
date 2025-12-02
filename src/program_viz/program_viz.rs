@@ -14,10 +14,7 @@ use std::io;
 
 use crate::{
     program::Program,
-    program_viz::{
-        memory_viz::{self, memory_viz},
-        register_viz::register_viz,
-    },
+    program_viz::{debug_viz::debug_viz, memory_viz::memory_viz, register_viz::register_viz},
 };
 
 pub struct ProgramVisualizer<'a> {
@@ -65,6 +62,7 @@ impl<'a> ProgramVisualizer<'a> {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
             KeyCode::Char('s') => self.program.step(),
+            KeyCode::Char('r') => self.program.reset(),
             _ => {}
         }
     }
@@ -79,10 +77,15 @@ impl<'a> Widget for &ProgramVisualizer<'a> {
     where
         Self: Sized,
     {
-        let [memory_area, register_area] =
-            Layout::horizontal([Constraint::Length(45), Constraint::Min(1)]).areas(area);
+        let [memory_area, register_area, debug_area] = Layout::horizontal([
+            Constraint::Length(45),
+            Constraint::Length(26),
+            Constraint::Min(1),
+        ])
+        .areas(area);
 
         memory_viz(self.program, memory_area, buf);
         register_viz(self.program, register_area, buf);
+        debug_viz(self.program, debug_area, buf);
     }
 }
