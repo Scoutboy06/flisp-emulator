@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::Register;
+use crate::register::{GetBit, Register};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -100,8 +100,8 @@ impl Program {
         &self.memory
     }
 
-    pub fn memory_at<T: Into<u8>>(&self, addr: T) -> u8 {
-        self.memory[addr.into() as usize].get()
+    pub fn memory_at<T: Into<u8>>(&self, adr: T) -> u8 {
+        self.memory[adr.into() as usize].get()
     }
 
     pub fn reg_a(&self) -> Register {
@@ -214,8 +214,62 @@ impl Program {
                 self.reg.x.set(data);
                 self.set_ldx_flags();
             }
-            0xa0 => {
-                // LDX Adr
+            0x95 => {
+                // ADCA #Data
+                let data = self.memory_at(self.reg.sp);
+                let (sum, c, v) = self.reg.a.adca(data);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xa5 => {
+                // ADCA Adr
+                let adr = self.memory_at(self.reg.sp);
+                let data = self.memory_at(adr);
+                let (sum, c, v) = self.reg.a.adca(data);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xb5 => {
+                // ADCA n,SP
+                let n = self.memory_at(self.reg.sp);
+                let (adr, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let (sum, c, v) = self.reg.a.adca(data);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xc5 => {
+                // ADCA n,X
+                let n = self.memory_at(self.reg.sp);
+                let (adr, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let (sum, c, v) = self.reg.a.adca(data);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xd5 => {
+                // ADCA n,Y
+                let n = self.memory_at(self.reg.sp);
+                let (adr, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let (sum, c, v) = self.reg.a.adca(data);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
             }
             0xf0 => {
                 // LDA #Data
@@ -225,9 +279,9 @@ impl Program {
                 self.set_lda_flags();
             }
             0xf1 => {
-                // LDA Addr
-                let addr = self.memory_at(self.reg.pc.get());
-                let data = self.memory_at(addr);
+                // LDA Adr
+                let adr = self.memory_at(self.reg.pc.get());
+                let data = self.memory_at(adr);
                 self.reg.a.set(data);
                 self.reg.pc.inc();
                 self.set_lda_flags();

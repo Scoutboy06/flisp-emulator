@@ -17,23 +17,23 @@ pub fn memory_viz(
 ) {
     let area_wrapper = Layout::vertical([Constraint::Length(34)]).split(area)[0];
 
-    let [address_area, memory_read_area, ascii_area] = Layout::horizontal([
+    let [adress_area, memory_read_area, ascii_area] = Layout::horizontal([
         Constraint::Length(5),
         Constraint::Length(29),
         Constraint::Length(11),
     ])
     .areas(area_wrapper);
 
-    render_address_area(program, address_area, buf);
+    render_adress_area(program, adress_area, buf);
     render_memory_area(program, memory_read_area, buf);
     render_ascii_area(program, ascii_area, buf);
 }
 
-fn render_address_area(program: &Program, area: Rect, buf: &mut Buffer) {
+fn render_adress_area(program: &Program, area: Rect, buf: &mut Buffer) {
     let mut lines: Vec<Line> = Vec::with_capacity(32);
     for row in 0..32_u8 {
-        let addr = row * 8;
-        let s = format!("{:02x}", addr);
+        let adr = row * 8;
+        let s = format!("{:02x}", adr);
         let span = Span::default().content(s).fg(Color::DarkGray);
         lines.push(Line::from(span));
     }
@@ -41,7 +41,7 @@ fn render_address_area(program: &Program, area: Rect, buf: &mut Buffer) {
     let block = Block::default()
         .borders(Borders::LEFT | Borders::TOP | Borders::BOTTOM)
         .border_set(border::ROUNDED)
-        .title(Line::from("Addr"));
+        .title(Line::from("Adr"));
 
     Paragraph::new(lines)
         .centered()
