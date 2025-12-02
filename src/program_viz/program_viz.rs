@@ -80,17 +80,19 @@ impl<'a> Widget for &ProgramVisualizer<'a> {
     where
         Self: Sized,
     {
-        let [memory_area, register_area, flags_area, debug_area] = Layout::horizontal([
+        let [col0, col1, col2] = Layout::horizontal([
             Constraint::Length(45),
             Constraint::Length(26),
-            Constraint::Length(21),
             Constraint::Min(1),
         ])
         .areas(area);
 
-        memory_viz(self.program, memory_area, buf);
-        register_viz(self.program, register_area, buf);
+        let [registers_area, flags_area] =
+            Layout::vertical([Constraint::Length(3), Constraint::Length(3)]).areas(col1);
+
+        memory_viz(self.program, col0, buf);
+        register_viz(self.program, col1, buf);
         flags_viz(self.program, flags_area, buf);
-        debug_viz(self.program, debug_area, buf);
+        debug_viz(self.program, col2, buf);
     }
 }
