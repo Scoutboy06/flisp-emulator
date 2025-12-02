@@ -12,14 +12,16 @@ use ratatui::{
 };
 use std::io;
 
-use super::memory_viz::MemoryVisualizer;
-use super::register_viz::RegisterVisualizer;
-use crate::program::Program;
+use crate::{
+    program::Program,
+    program_viz::{
+        memory_viz::{self, memory_viz},
+        register_viz::register_viz,
+    },
+};
 
 pub struct ProgramVisualizer<'a> {
-    program: &'a Program,
-    memory_viz: MemoryVisualizer<'a>,
-    register_viz: RegisterVisualizer<'a>,
+    program: &'a mut Program,
     exit: bool,
     is_running: bool,
 }
@@ -30,8 +32,6 @@ impl<'a> ProgramVisualizer<'a> {
             program,
             exit: false,
             is_running: false,
-            memory_viz: MemoryVisualizer::new(program),
-            register_viz: RegisterVisualizer::new(program),
         };
         let mut terminal = ratatui::init();
         let result = visualizer.run(&mut terminal);
@@ -64,6 +64,7 @@ impl<'a> ProgramVisualizer<'a> {
     fn handle_key_event(&mut self, key_event: KeyEvent) {
         match key_event.code {
             KeyCode::Char('q') => self.exit(),
+            KeyCode::Char('s') => self.program.step(),
             _ => {}
         }
     }
@@ -81,7 +82,7 @@ impl<'a> Widget for &ProgramVisualizer<'a> {
         let [memory_area, register_area] =
             Layout::horizontal([Constraint::Length(45), Constraint::Min(1)]).areas(area);
 
-        self.memory_viz.render(memory_area, buf);
-        self.register_viz.render(register_area, buf);
+        memory_viz(self.program, memory_area, buf);
+        register_viz(self.program, register_area, buf);
     }
 }
