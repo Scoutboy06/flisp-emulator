@@ -7,7 +7,8 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::program::{Program, Register};
+use crate::program::Program;
+use crate::register::Register;
 
 pub fn memory_viz(
     program: &Program,

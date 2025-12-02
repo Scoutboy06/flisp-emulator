@@ -1,33 +1,6 @@
 use std::collections::VecDeque;
 
-#[derive(Default, Copy, Clone, PartialEq, Eq)]
-pub struct Register {
-    data: u8,
-}
-
-impl Register {
-    pub fn new(data: u8) -> Self {
-        Self { data }
-    }
-
-    pub fn set(&mut self, data: u8) {
-        self.data = data;
-    }
-
-    pub fn get(&self) -> u8 {
-        self.data
-    }
-
-    pub fn get_bit(&self, bit_idx: u8) -> bool {
-        self.data & (1u8 << bit_idx) != 0
-    }
-
-    pub fn inc(&mut self) -> bool {
-        let res = self.data.overflowing_add(1);
-        self.data = res.0;
-        res.1
-    }
-}
+use crate::register::Register;
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -127,8 +100,8 @@ impl Program {
         &self.memory
     }
 
-    pub fn memory_at(&self, addr: u8) -> u8 {
-        self.memory[addr as usize].get()
+    pub fn memory_at<T: Into<u8>>(&self, addr: T) -> u8 {
+        self.memory[addr.into() as usize].get()
     }
 
     pub fn reg_a(&self) -> Register {
@@ -232,10 +205,7 @@ impl Program {
                 let data = self.memory_at(self.reg.pc.get());
                 self.reg.a.set(data);
                 self.reg.pc.inc();
-
-                self.reg.cc.set(CCFlag::N, self.reg.a.get_bit(7));
-                self.reg.cc.set(CCFlag::Z, data == 0u8);
-                self.reg.cc.disable(CCFlag::V);
+                self.set_lda_flags();
                 2
             }
             0xf1 => {
@@ -244,24 +214,106 @@ impl Program {
                 let data = self.memory_at(addr);
                 self.reg.a.set(data);
                 self.reg.pc.inc();
-
-                self.reg.cc.set(CCFlag::N, self.reg.a.get_bit(7));
-                self.reg.cc.set(CCFlag::Z, data == 0u8);
-                self.reg.cc.disable(CCFlag::V);
+                self.set_lda_flags();
                 3
             }
             0xf2 => {
                 // LDA n, SP
                 let n = self.memory_at(self.reg.pc.get());
-                let addr = n + self.reg.sp.get();
-                let data = self.memory_at(addr);
+                let (sum, _) = n + self.reg.sp;
+                let data = self.memory_at(sum);
                 self.reg.a.set(data);
                 self.reg.pc.inc();
-
-                self.reg.cc.set(CCFlag::N, self.reg.a.get_bit(7));
-                self.reg.cc.set(CCFlag::Z, data == 0u8);
-                self.reg.cc.disable(CCFlag::V);
+                self.set_lda_flags();
                 3
+            }
+            0xf3 => {
+                // LDA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                self.reg.a.set(data);
+                self.reg.pc.inc();
+                self.set_lda_flags();
+                3
+            }
+            0xf4 => {
+                // LDA A,X
+                let (sum, _) = self.reg.a + self.reg.x;
+                self.reg.a.set(self.memory_at(sum));
+                self.set_lda_flags();
+                3
+            }
+            0xf5 => {
+                // LDA ,X+
+                self.reg.a.set(self.memory_at(self.reg.x));
+                self.reg.x.inc();
+                self.set_lda_flags();
+                4
+            }
+            0xf6 => {
+                // LDA ,X-
+                self.reg.a.set(self.memory_at(self.reg.x));
+                self.reg.x.dec();
+                self.set_lda_flags();
+                4
+            }
+            0xf7 => {
+                // LDA ,+X
+                self.reg.x.inc();
+                self.reg.a.set(self.memory_at(self.reg.x));
+                self.set_lda_flags();
+                4
+            }
+            0xf8 => {
+                // LDA ,-X
+                self.reg.x.dec();
+                self.reg.a.set(self.memory_at(self.reg.x));
+                self.set_lda_flags();
+                4
+            }
+            0xf9 => {
+                // LDA n,Y
+                let n = self.memory_at(self.reg.pc.get());
+                let (sum, _) = n + self.reg.y;
+                self.reg.a.set(sum);
+                self.set_lda_flags();
+                3
+            }
+            0xfa => {
+                // LDA A,Y
+                let (sum, _) = self.reg.a + self.reg.y;
+                self.reg.a.set(sum);
+                self.set_lda_flags();
+                3
+            }
+            0xfb => {
+                // LDA ,Y+
+                self.reg.a.set(self.memory_at(self.reg.y));
+                self.reg.y.inc();
+                self.set_lda_flags();
+                4
+            }
+            0xfc => {
+                // LDA ,Y-
+                self.reg.a.set(self.memory_at(self.reg.y));
+                self.reg.y.dec();
+                self.set_lda_flags();
+                4
+            }
+            0xfd => {
+                // LDA ,+Y
+                self.reg.y.inc();
+                self.reg.a.set(self.memory_at(self.reg.y));
+                self.set_lda_flags();
+                4
+            }
+            0xfe => {
+                // LDA ,-Y
+                self.reg.y.dec();
+                self.reg.a.set(self.memory_at(self.reg.y));
+                self.set_lda_flags();
+                4
             }
             _ => {
                 self.debug_log(format!("Not yet implemented: {:02x}", instruction));
@@ -270,6 +322,12 @@ impl Program {
         };
 
         self.clock_count += clock_cycles_elaped;
+    }
+
+    fn set_lda_flags(&mut self) {
+        self.reg.cc.set(CCFlag::N, self.reg.a.bit(7));
+        self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
+        self.reg.cc.disable(CCFlag::V);
     }
 
     fn todo(&mut self, instruction: u8, clk: u32) -> u32 {
