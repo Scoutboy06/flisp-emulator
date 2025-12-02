@@ -75,6 +75,7 @@ pub struct RegisterStore {
     x: Register,
     y: Register,
     r: Register,
+    i: Register,
     sp: Register,
     pc: Register,
     ta: Register,
@@ -195,8 +196,9 @@ impl Program {
             }
             QState::Fetch => {
                 self.q_state = QState::Execute;
-                self.next_instruction();
+                self.reg.i.set(self.memory_at(self.reg.pc.get()));
                 self.reg.pc.inc();
+                self.next_instruction();
                 self.q_state = QState::Fetch;
             }
             QState::Execute => unreachable!(),
@@ -204,8 +206,7 @@ impl Program {
     }
 
     fn next_instruction(&mut self) {
-        let instruction = self.memory_at(self.reg.pc.get());
-        self.reg.cc.enable(CCFlag::N);
+        let instruction = self.reg.i.get();
         // self.debug_log(format!(
         //     "INS: {:02x}, PC: {:02x}",
         //     instruction,
@@ -228,7 +229,7 @@ impl Program {
             }
             0xf0 => {
                 // LDA #Data
-                let data = self.memory_at(self.reg.pc.get() + 1);
+                let data = self.memory_at(self.reg.pc.get());
                 self.reg.a.set(data);
                 self.reg.pc.inc();
 
@@ -239,7 +240,7 @@ impl Program {
             }
             0xf1 => {
                 // LDA Addr
-                let addr = self.memory_at(self.reg.pc.get() + 1);
+                let addr = self.memory_at(self.reg.pc.get());
                 let data = self.memory_at(addr);
                 self.reg.a.set(data);
                 self.reg.pc.inc();
@@ -251,7 +252,7 @@ impl Program {
             }
             0xf2 => {
                 // LDA n, SP
-                let n = self.memory_at(self.reg.pc.get() + 1);
+                let n = self.memory_at(self.reg.pc.get());
                 let addr = n + self.reg.sp.get();
                 let data = self.memory_at(addr);
                 self.reg.a.set(data);
@@ -269,5 +270,10 @@ impl Program {
         };
 
         self.clock_count += clock_cycles_elaped;
+    }
+
+    fn todo(&mut self, instruction: u8, clk: u32) -> u32 {
+        self.debug_log(format!("Not yet implemented: {:02x}", instruction));
+        clk
     }
 }
