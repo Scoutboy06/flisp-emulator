@@ -33,6 +33,10 @@ impl CCFlags {
         }
     }
 
+    pub fn overwrite(&mut self, data: u8) {
+        self.data = data;
+    }
+
     pub fn enable(&mut self, flag: CCFlag) {
         self.set(flag, true);
     }
@@ -199,7 +203,13 @@ impl Program {
             0x03 | 0x04 | 0xe0 | 0xdf | 0xef | 0xff => {
                 self.debug_log(format!("Invalid instruction: {:02x}", instruction));
             }
-            0x0 => {} // NOP
+            0x00 => {} // NOP
+            0x01 => {
+                // ANDCC #Data
+                let data = self.memory_at(self.reg.pc);
+                let result = self.reg.cc.data & data;
+                self.reg.cc.overwrite(result);
+            }
             0x05 => {
                 // CLRA
                 self.reg.a.set(0);
