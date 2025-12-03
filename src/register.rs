@@ -22,10 +22,10 @@ impl Register {
         self.data & (1u8 << bit_idx) != 0
     }
 
-    pub fn inc(&mut self) -> bool {
-        let res = self.data.overflowing_add(1);
+    pub fn inc(&mut self) -> (bool, bool) {
+        let res = add(self.data, 1, false);
         self.data = res.0;
-        res.1
+        (res.1, res.2)
     }
 
     pub fn dec(&mut self) -> bool {
@@ -93,6 +93,27 @@ impl ops::Add<Register> for u8 {
     /// Returns: (sum, c_flag, v_flag)
     fn add(self, rhs: Register) -> Self::Output {
         add(self, rhs.data, false)
+    }
+}
+
+impl ops::BitAnd for Register {
+    type Output = u8;
+    fn bitand(self, rhs: Self) -> Self::Output {
+        self.data & rhs.data
+    }
+}
+
+impl ops::BitAnd<u8> for Register {
+    type Output = u8;
+    fn bitand(self, rhs: u8) -> Self::Output {
+        self.data & rhs
+    }
+}
+
+impl ops::BitAnd<Register> for u8 {
+    type Output = u8;
+    fn bitand(self, rhs: Register) -> Self::Output {
+        self & rhs.data
     }
 }
 

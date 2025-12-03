@@ -246,6 +246,13 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0x99 => {
+                // ANDA #Data
+                let data = self.memory_at(self.reg.pc);
+                let result = self.reg.a & data;
+                self.reg.a.set(result);
+                self.set_anda_flags();
+            }
             0xa0 => {
                 // LDX Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -274,6 +281,13 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
+            }
+            0xa9 => {
+                // ANDA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let result = self.reg.a & self.memory_at(adr);
+                self.reg.a.set(result);
+                self.set_anda_flags();
             }
             0xb0 => {
                 // LDX n,SP
@@ -308,6 +322,15 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0xb9 => {
+                // ANDA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let result = self.reg.a & data;
+                self.reg.a.set(result);
+                self.set_anda_flags();
+            }
             0xc0 => {
                 // LDX n,X
                 let n = self.memory_at(self.reg.pc);
@@ -341,6 +364,15 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0xc9 => {
+                // ANDA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let result = self.reg.a & data;
+                self.reg.a.set(result);
+                self.set_anda_flags();
+            }
             0xd0 => {
                 // LDX n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -373,6 +405,15 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
+            }
+            0xd9 => {
+                // ANDA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let result = self.reg.a & data;
+                self.reg.a.set(result);
+                self.set_anda_flags();
             }
             0xa6 => {
                 // ADDA Adr
@@ -544,6 +585,12 @@ impl Program {
     fn set_ldsp_flags(&mut self) {
         self.reg.cc.set(CCFlag::N, self.reg.sp.bit(7));
         self.reg.cc.set(CCFlag::Z, self.reg.sp == 0);
+        self.reg.cc.disable(CCFlag::V);
+    }
+
+    fn set_anda_flags(&mut self) {
+        self.reg.cc.set(CCFlag::N, self.reg.a.bit(7));
+        self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
         self.reg.cc.disable(CCFlag::V);
     }
 
