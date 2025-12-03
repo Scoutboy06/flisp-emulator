@@ -230,10 +230,65 @@ impl Program {
                 self.reg.a.set(new_a);
                 self.set_asr_flags(new_a, c);
             }
+            0x20 => {
+                // BSR Adr
+                self.reg.sp.dec();
+                let return_addr = self.reg.pc.get();
+                self.memory[self.reg.sp.get() as usize].set(return_addr);
+                let offset = self.memory_at(self.reg.pc);
+                let (new_pc, _, _) = self.reg.pc + offset;
+                self.reg.pc.set(new_pc);
+            }
+            0x21 => {
+                // BRA Adr
+                let offset = self.memory_at(self.reg.pc);
+                let (new_pc, _, _) = self.reg.pc + offset;
+                self.reg.pc.set(new_pc);
+            }
+            0x22 => {
+                // BMI Adr
+                if self.reg.cc.get(CCFlag::N) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x23 => {
+                // BPL Adr
+                if !self.reg.cc.get(CCFlag::N) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
             0x24 => {
                 // BEQ Adr
                 let z = self.reg.cc.get(CCFlag::Z);
                 if z {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x25 => {
+                // BNE Adr
+                if !self.reg.cc.get(CCFlag::Z) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x26 => {
+                // BVS Adr
+                if self.reg.cc.get(CCFlag::V) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x27 => {
+                // BVC Adr
+                if !self.reg.cc.get(CCFlag::V) {
                     let offset = self.memory_at(self.reg.pc);
                     let (new_pc, _, _) = self.reg.pc + offset;
                     self.reg.pc.set(new_pc);
@@ -267,12 +322,22 @@ impl Program {
                     self.reg.pc.set(new_pc);
                 }
             }
+            0x2b => {
+                // BLS Adr
+                let c = self.reg.cc.get(CCFlag::C);
+                let z = self.reg.cc.get(CCFlag::Z);
+                if c || z {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
             0x2c => {
                 // BGT Adr
                 let n = self.reg.cc.get(CCFlag::N);
                 let v = self.reg.cc.get(CCFlag::V);
                 let z = self.reg.cc.get(CCFlag::Z);
-                if !(n == v || z) {
+                if !(n != v || z) {
                     let offset = self.memory_at(self.reg.pc);
                     let (new_pc, _, _) = self.reg.pc + offset;
                     self.reg.pc.set(new_pc);
@@ -281,6 +346,25 @@ impl Program {
             0x2d => {
                 // BGE Adr
                 if self.reg.cc.get(CCFlag::N) == self.reg.cc.get(CCFlag::V) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x2e => {
+                // BLE Adr
+                let n = self.reg.cc.get(CCFlag::N);
+                let v = self.reg.cc.get(CCFlag::V);
+                let z = self.reg.cc.get(CCFlag::Z);
+                if n != v || z {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x2f => {
+                // BLT Adr
+                if self.reg.cc.get(CCFlag::N) != self.reg.cc.get(CCFlag::V) {
                     let offset = self.memory_at(self.reg.pc);
                     let (new_pc, _, _) = self.reg.pc + offset;
                     self.reg.pc.set(new_pc);
