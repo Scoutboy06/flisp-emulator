@@ -220,6 +220,12 @@ impl Program {
                 self.reg.y.set(data);
                 self.set_ldy_flags();
             }
+            0x92 => {
+                // LDSP #Data
+                let data = self.memory_at(self.reg.pc);
+                self.reg.sp.set(data);
+                self.set_ldsp_flags();
+            }
             0x95 => {
                 // ADCA #Data
                 let data = self.memory_at(self.reg.pc);
@@ -252,6 +258,12 @@ impl Program {
                 self.reg.y.set(self.memory_at(adr));
                 self.set_ldy_flags();
             }
+            0xa2 => {
+                // LDSP Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.reg.sp.set(self.memory_at(adr));
+                self.set_ldsp_flags();
+            }
             0xa5 => {
                 // ADCA Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -276,6 +288,13 @@ impl Program {
                 let (adr, _, _) = n + self.reg.sp;
                 self.reg.y.set(self.memory_at(adr));
                 self.set_ldy_flags();
+            }
+            0xb2 => {
+                // LDSP n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.reg.sp.set(self.memory_at(adr));
+                self.set_ldsp_flags();
             }
             0xb5 => {
                 // ADCA n,SP
@@ -303,6 +322,13 @@ impl Program {
                 self.reg.y.set(self.memory_at(adr));
                 self.set_ldy_flags();
             }
+            0xc2 => {
+                // LDSP n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.reg.sp.set(self.memory_at(adr));
+                self.set_ldsp_flags();
+            }
             0xc5 => {
                 // ADCA n,X
                 let n = self.memory_at(self.reg.pc);
@@ -328,6 +354,13 @@ impl Program {
                 let (adr, _, _) = n + self.reg.y;
                 self.reg.y.set(self.memory_at(adr));
                 self.set_ldy_flags();
+            }
+            0xd2 => {
+                // LDSP n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.reg.sp.set(self.memory_at(adr));
+                self.set_ldsp_flags();
             }
             0xd5 => {
                 // ADCA n,Y
@@ -505,6 +538,12 @@ impl Program {
     fn set_ldy_flags(&mut self) {
         self.reg.cc.set(CCFlag::N, self.reg.y.bit(7));
         self.reg.cc.set(CCFlag::Z, self.reg.y == 0);
+        self.reg.cc.disable(CCFlag::V);
+    }
+
+    fn set_ldsp_flags(&mut self) {
+        self.reg.cc.set(CCFlag::N, self.reg.sp.bit(7));
+        self.reg.cc.set(CCFlag::Z, self.reg.sp == 0);
         self.reg.cc.disable(CCFlag::V);
     }
 
