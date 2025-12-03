@@ -213,10 +213,7 @@ impl Program {
             0x05 => {
                 // CLRA
                 self.reg.a.set(0);
-                self.reg.cc.disable(CCFlag::N);
-                self.reg.cc.enable(CCFlag::Z);
-                self.reg.cc.disable(CCFlag::V);
-                self.reg.cc.disable(CCFlag::C);
+                self.set_clr_flags();
             }
             0x0b => {
                 // ASLA
@@ -377,12 +374,25 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
+            0x35 => {
+                // CLR Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.memory[adr as usize].set(0);
+                self.set_clr_flags();
+            }
             0x3f => {
                 // ASR Adr
                 let adr = self.memory_at(self.reg.pc);
                 let (new_val, c) = asr(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
+            }
+            0x45 => {
+                // CLR n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.memory[adr as usize].set(0);
+                self.set_clr_flags();
             }
             0x4b => {
                 // ASL n,SP
@@ -400,6 +410,13 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x55 => {
+                // CLR n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.memory[adr as usize].set(0);
+                self.set_clr_flags();
+            }
             0x5b => {
                 // ASL n,X
                 let n = self.memory_at(self.reg.pc);
@@ -416,6 +433,12 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x65 => {
+                // CLR A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                self.memory[adr as usize].set(0);
+                self.set_clr_flags();
+            }
             0x6b => {
                 // ASL A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
@@ -429,6 +452,13 @@ impl Program {
                 let (new_val, c) = asr(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
+            }
+            0x75 => {
+                // CLR n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.memory[adr as usize].set(0);
+                self.set_clr_flags();
             }
             0x7b => {
                 // ASL n,Y
@@ -445,6 +475,12 @@ impl Program {
                 let (new_val, c) = asr(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
+            }
+            0x85 => {
+                // CLR A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                self.memory[adr as usize].set(0);
+                self.set_clr_flags();
             }
             0x8b => {
                 // ASL A,Y
@@ -898,6 +934,13 @@ impl Program {
         self.reg.cc.set(CCFlag::N, result.bit(7));
         self.reg.cc.set(CCFlag::Z, result == 0);
         self.reg.cc.disable(CCFlag::V);
+    }
+
+    fn set_clr_flags(&mut self) {
+        self.reg.cc.set(CCFlag::N, false);
+        self.reg.cc.set(CCFlag::Z, true);
+        self.reg.cc.set(CCFlag::V, false);
+        self.reg.cc.set(CCFlag::C, false);
     }
 
     fn todo(&mut self, instruction: u8) {
