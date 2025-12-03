@@ -34,20 +34,27 @@ impl Register {
         res.1
     }
 
-    /// Add with carry-in
+    /// 8-bit addition with carry-in
     /// Returns: (sum, c_flag, v_flag)
-    pub fn adca<T: Into<Self>>(&self, other: T) -> (u8, bool, bool) {
-        let o = other.into();
-        let (sum1, c1) = *self + o;
-        let (sum2, c2) = sum1.overflowing_add(1);
-
-        let r7 = Register::from(sum2).bit(7);
-        let x7 = self.bit(7);
-        let y7 = o.bit(7);
-        let v = (r7 && !x7 && !y7) || (!r7 && x7 && y7);
-
-        (sum2, c1 || c2, v)
+    pub fn add_c<T: Into<Self>>(&self, other: T) -> (u8, bool, bool) {
+        add(self.data, other.into().data, true)
     }
+}
+
+/// 8-bit addition with optional carry-in
+/// Returns: (sum, c_flag, v_flag)
+fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
+    let x = x.into();
+    let y = y.into();
+    let (sum1, c1) = x.overflowing_add(y);
+    let (sum2, c2) = sum1.overflowing_add(cin as u8);
+
+    let r7 = sum2.bit(7);
+    let x7 = x.bit(7);
+    let y7 = y.bit(7);
+    let v = (r7 && !x7 && !y7) || (!r7 && x7 && y7);
+
+    (sum2, c1 || c2, v)
 }
 
 impl Into<u8> for Register {
@@ -64,29 +71,28 @@ impl From<u8> for Register {
 
 impl ops::Add for Register {
     type Output = (u8, bool);
+    /// 8-bit addition
+    /// Returns: (sum, c_flag, v_flag)
     fn add(self, rhs: Self) -> Self::Output {
         self.data.overflowing_add(rhs.data)
     }
 }
 
 impl ops::Add<u8> for Register {
-    type Output = (u8, bool);
+    type Output = (u8, bool, bool);
+    /// 8-bit addition
+    /// Returns: (sum, c_flag, v_flag)
     fn add(self, rhs: u8) -> Self::Output {
-        self.data.overflowing_add(rhs)
+        add(self.data, rhs, false)
     }
 }
 
 impl ops::Add<Register> for u8 {
-    type Output = (u8, bool);
+    type Output = (u8, bool, bool);
+    /// 8-bit addition
+    /// Returns: (sum, c_flag, v_flag)
     fn add(self, rhs: Register) -> Self::Output {
-        self.overflowing_add(rhs.data)
-    }
-}
-
-impl ops::Sub for Register {
-    type Output = (u8, bool);
-    fn sub(self, rhs: Self) -> Self::Output {
-        self.data.overflowing_sub(rhs.data)
+        add(self, rhs.data, false)
     }
 }
 

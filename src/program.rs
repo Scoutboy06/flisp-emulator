@@ -169,7 +169,7 @@ impl Program {
             }
             QState::Fetch => {
                 self.q_state = QState::Execute;
-                self.reg.i.set(self.memory_at(self.reg.pc.get()));
+                self.reg.i.set(self.memory_at(self.reg.pc));
                 self.reg.pc.inc();
                 self.next_instruction();
                 self.q_state = QState::Fetch;
@@ -216,8 +216,8 @@ impl Program {
             }
             0x95 => {
                 // ADCA #Data
-                let data = self.memory_at(self.reg.sp);
-                let (sum, c, v) = self.reg.a.adca(data);
+                let data = self.memory_at(self.reg.pc);
+                let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
                 self.reg.cc.set(CCFlag::N, sum.bit(7));
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
@@ -226,9 +226,9 @@ impl Program {
             }
             0xa5 => {
                 // ADCA Adr
-                let adr = self.memory_at(self.reg.sp);
+                let adr = self.memory_at(self.reg.pc);
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.adca(data);
+                let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
                 self.reg.cc.set(CCFlag::N, sum.bit(7));
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
@@ -237,10 +237,10 @@ impl Program {
             }
             0xb5 => {
                 // ADCA n,SP
-                let n = self.memory_at(self.reg.sp);
-                let (adr, _) = n + self.reg.sp;
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.adca(data);
+                let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
                 self.reg.cc.set(CCFlag::N, sum.bit(7));
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
@@ -249,10 +249,10 @@ impl Program {
             }
             0xc5 => {
                 // ADCA n,X
-                let n = self.memory_at(self.reg.sp);
-                let (adr, _) = n + self.reg.x;
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.adca(data);
+                let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
                 self.reg.cc.set(CCFlag::N, sum.bit(7));
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
@@ -261,47 +261,96 @@ impl Program {
             }
             0xd5 => {
                 // ADCA n,Y
-                let n = self.memory_at(self.reg.sp);
-                let (adr, _) = n + self.reg.y;
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.adca(data);
+                let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
                 self.reg.cc.set(CCFlag::N, sum.bit(7));
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0x96 => {
+                // ADDA #Data
+                let data = self.memory_at(self.reg.pc);
+                let (sum, c, v) = self.reg.a + data;
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, sum == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xa6 => {
+                // ADDA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (sum, c, v) = self.memory_at(adr) + self.reg.a;
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, sum == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xb6 => {
+                // ADDA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (sum, c, v) = self.reg.a + self.memory_at(adr);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, sum == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xc6 => {
+                // ADDA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (sum, c, v) = self.reg.a + self.memory_at(adr);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, sum == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
+            0xd6 => {
+                // ADDA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (sum, c, v) = self.reg.a + self.memory_at(adr);
+                self.reg.a.set(sum);
+                self.reg.cc.set(CCFlag::N, sum.bit(7));
+                self.reg.cc.set(CCFlag::Z, sum == 0);
+                self.reg.cc.set(CCFlag::V, v);
+                self.reg.cc.set(CCFlag::C, c);
+            }
             0xf0 => {
                 // LDA #Data
-                let data = self.memory_at(self.reg.pc.get());
+                let data = self.memory_at(self.reg.pc);
                 self.reg.a.set(data);
-                self.reg.pc.inc();
                 self.set_lda_flags();
             }
             0xf1 => {
                 // LDA Adr
-                let adr = self.memory_at(self.reg.pc.get());
+                let adr = self.memory_at(self.reg.pc);
                 let data = self.memory_at(adr);
                 self.reg.a.set(data);
-                self.reg.pc.inc();
                 self.set_lda_flags();
             }
             0xf2 => {
                 // LDA n, SP
-                let n = self.memory_at(self.reg.pc.get());
-                let (sum, _) = n + self.reg.sp;
+                let n = self.memory_at(self.reg.pc);
+                let (sum, _, _) = n + self.reg.sp;
                 let data = self.memory_at(sum);
                 self.reg.a.set(data);
-                self.reg.pc.inc();
                 self.set_lda_flags();
             }
             0xf3 => {
                 // LDA n,X
                 let n = self.memory_at(self.reg.pc);
-                let (adr, _) = n + self.reg.x;
+                let (adr, _, _) = n + self.reg.x;
                 let data = self.memory_at(adr);
                 self.reg.a.set(data);
-                self.reg.pc.inc();
                 self.set_lda_flags();
             }
             0xf4 => {
@@ -336,8 +385,8 @@ impl Program {
             }
             0xf9 => {
                 // LDA n,Y
-                let n = self.memory_at(self.reg.pc.get());
-                let (sum, _) = n + self.reg.y;
+                let n = self.memory_at(self.reg.pc);
+                let (sum, _, _) = n + self.reg.y;
                 self.reg.a.set(sum);
                 self.set_lda_flags();
             }
