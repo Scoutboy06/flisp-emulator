@@ -28,10 +28,12 @@ impl Register {
         (res.1, res.2)
     }
 
-    pub fn dec(&mut self) -> bool {
-        let res = self.data.overflowing_sub(1);
+    /// Decrement register by 1
+    /// Returns: (c_flag, v_flag)
+    pub fn dec(&mut self) -> (bool, bool) {
+        let res = sub(self.data, 1);
         self.data = res.0;
-        res.1
+        (res.1, res.2)
     }
 
     /// 8-bit addition with carry-in
