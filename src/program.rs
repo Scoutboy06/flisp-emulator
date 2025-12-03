@@ -404,6 +404,12 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0x98 => {
+                // BITA #Data
+                let data = self.memory_at(self.reg.pc);
+                let result = self.reg.a & data;
+                self.set_bita_flags(result);
+            }
             0x96 => {
                 // ADDA #Data
                 let data = self.memory_at(self.reg.pc);
@@ -450,6 +456,13 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0xa8 => {
+                // BITA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let result = self.reg.a & data;
+                self.set_bita_flags(result);
+            }
             0xa9 => {
                 // ANDA Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -489,6 +502,13 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
+            }
+            0xb8 => {
+                // BITA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                self.set_bita_flags(self.reg.a & data);
             }
             0xb9 => {
                 // ANDA n,SP
@@ -532,6 +552,14 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0xc8 => {
+                // BITA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let result = self.reg.a & data;
+                self.set_bita_flags(result);
+            }
             0xc9 => {
                 // ANDA n,X
                 let n = self.memory_at(self.reg.pc);
@@ -573,6 +601,14 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
+            }
+            0xd8 => {
+                // BITA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let result = self.reg.a & data;
+                self.set_bita_flags(result);
             }
             0xd9 => {
                 // ANDA n,Y
@@ -771,6 +807,12 @@ impl Program {
         self.reg.cc.set(CCFlag::N, new_val.bit(7));
         self.reg.cc.set(CCFlag::Z, new_val == 0);
         self.reg.cc.set(CCFlag::C, c);
+        self.reg.cc.disable(CCFlag::V);
+    }
+
+    fn set_bita_flags(&mut self, result: u8) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
         self.reg.cc.disable(CCFlag::V);
     }
 
