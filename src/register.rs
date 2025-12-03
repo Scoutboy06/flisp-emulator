@@ -43,7 +43,7 @@ impl Register {
 
 /// 8-bit addition with optional carry-in
 /// Returns: (sum, c_flag, v_flag)
-fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
+pub fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
     let x = x.into();
     let y = y.into();
     let (sum1, c1) = x.overflowing_add(y);
@@ -57,12 +57,26 @@ fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
     (sum2, c1 || c2, v)
 }
 
-fn shl<T: Into<u8>>(x: T, y: T) -> (u8, bool, bool) {
+/// Logical Shift Left
+/// (x << y)
+/// Returns: (result, c_flag, v_flag)
+pub fn shl<T: Into<u8>>(x: T, y: T) -> (u8, bool, bool) {
     let x = x.into();
     let y = y.into();
     let (res, c) = x.overflowing_shl(y as u32);
     let v = x.bit(7);
     (res, c, v)
+}
+
+/// Arithmetic Shift Right
+/// (x >> 1) with sign bit preserved
+/// Returns: (result, c_flag)
+pub fn asr<T: Into<u8>>(x: T) -> (u8, bool) {
+    let x = x.into();
+    let c = x.bit(0);
+    let sign_bit = x.bit(7);
+    let res = (x >> 1) | ((sign_bit as u8) << 7);
+    (res, c)
 }
 
 impl Into<u8> for Register {

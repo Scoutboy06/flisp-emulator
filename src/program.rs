@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register};
+use crate::register::{GetBit, Register, asr};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -224,12 +224,25 @@ impl Program {
                 self.reg.a.set(new_a);
                 self.set_asl_flags(new_a, c, v);
             }
+            0x0f => {
+                // ASRA
+                let (new_a, c) = asr(self.reg.a.get());
+                self.reg.a.set(new_a);
+                self.set_asr_flags(new_a, c);
+            }
             0x3b => {
                 // ASL Adr
                 let adr = self.memory_at(self.reg.pc);
                 let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
+            }
+            0x3f => {
+                // ASR Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (new_val, c) = asr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
             }
             0x4b => {
                 // ASL n,SP
@@ -239,6 +252,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
+            0x4f => {
+                // ASR n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (new_val, c) = asr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
+            }
             0x5b => {
                 // ASL n,X
                 let n = self.memory_at(self.reg.pc);
@@ -247,12 +268,27 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
+            0x5f => {
+                // ASR n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c) = asr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
+            }
             0x6b => {
                 // ASL A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
                 let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
+            }
+            0x6f => {
+                // ASR A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let (new_val, c) = asr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
             }
             0x7b => {
                 // ASL n,Y
@@ -262,12 +298,27 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
+            0x7f => {
+                // ASR n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (new_val, c) = asr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
+            }
             0x8b => {
                 // ASL A,Y
                 let (adr, _, _) = self.reg.a + self.reg.y;
                 let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
+            }
+            0x8f => {
+                // ASR A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let (new_val, c) = asr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
             }
             0x90 => {
                 // LDX #Data
@@ -550,7 +601,7 @@ impl Program {
             }
             0xf4 => {
                 // LDA A,X
-                let (sum, _) = self.reg.a + self.reg.x;
+                let (sum, _, _) = self.reg.a + self.reg.x;
                 self.reg.a.set(self.memory_at(sum));
                 self.set_lda_flags();
             }
@@ -587,7 +638,7 @@ impl Program {
             }
             0xfa => {
                 // LDA A,Y
-                let (sum, _) = self.reg.a + self.reg.y;
+                let (sum, _, _) = self.reg.a + self.reg.y;
                 self.reg.a.set(sum);
                 self.set_lda_flags();
             }
@@ -658,6 +709,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, new_val == 0);
         self.reg.cc.set(CCFlag::C, c);
         self.reg.cc.set(CCFlag::V, v);
+    }
+
+    fn set_asr_flags(&mut self, new_val: u8, c: bool) {
+        self.reg.cc.set(CCFlag::N, new_val.bit(7));
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::C, c);
+        self.reg.cc.disable(CCFlag::V);
     }
 
     fn todo(&mut self, instruction: u8) {
