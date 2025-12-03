@@ -215,6 +215,12 @@ impl Program {
                 self.reg.a.set(0);
                 self.set_clr_flags();
             }
+            0x0a => {
+                // COMA
+                let new_a = !self.reg.a.get();
+                self.reg.a.set(new_a);
+                self.set_com_flags(new_a);
+            }
             0x0b => {
                 // ASLA
                 let (new_a, c, v) = self.reg.a << 1;
@@ -380,6 +386,13 @@ impl Program {
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
             }
+            0x3a => {
+                // COM Adr
+                let adr = self.memory_at(self.reg.pc);
+                let new_val = !self.memory_at(adr);
+                self.memory[adr as usize].set(new_val);
+                self.set_com_flags(new_val);
+            }
             0x3f => {
                 // ASR Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -393,6 +406,14 @@ impl Program {
                 let (adr, _, _) = n + self.reg.sp;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x4a => {
+                // COM n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let new_val = !self.memory_at(adr);
+                self.memory[adr as usize].set(new_val);
+                self.set_com_flags(new_val);
             }
             0x4b => {
                 // ASL n,SP
@@ -417,6 +438,14 @@ impl Program {
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
             }
+            0x5a => {
+                // COM n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let new_val = !self.memory_at(adr);
+                self.memory[adr as usize].set(new_val);
+                self.set_com_flags(new_val);
+            }
             0x5b => {
                 // ASL n,X
                 let n = self.memory_at(self.reg.pc);
@@ -439,6 +468,13 @@ impl Program {
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
             }
+            0x6a => {
+                // COM A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let new_val = !self.memory_at(adr);
+                self.memory[adr as usize].set(new_val);
+                self.set_com_flags(new_val);
+            }
             0x6b => {
                 // ASL A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
@@ -459,6 +495,14 @@ impl Program {
                 let (adr, _, _) = n + self.reg.y;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x7a => {
+                // COM n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let new_val = !self.memory_at(adr);
+                self.memory[adr as usize].set(new_val);
+                self.set_com_flags(new_val);
             }
             0x7b => {
                 // ASL n,Y
@@ -481,6 +525,13 @@ impl Program {
                 let (adr, _, _) = self.reg.a + self.reg.y;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x8a => {
+                // COM A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let new_val = !self.memory_at(adr);
+                self.memory[adr as usize].set(new_val);
+                self.set_com_flags(new_val);
             }
             0x8b => {
                 // ASL A,Y
@@ -1033,6 +1084,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, true);
         self.reg.cc.set(CCFlag::V, false);
         self.reg.cc.set(CCFlag::C, false);
+    }
+
+    fn set_com_flags(&mut self, result: u8) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
+        self.reg.cc.set(CCFlag::V, false);
+        // C is unaffected by COM
     }
 
     fn set_cmp_flags(&mut self, diff: u8, c: bool, v: bool) {
