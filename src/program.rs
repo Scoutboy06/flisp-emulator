@@ -230,6 +230,62 @@ impl Program {
                 self.reg.a.set(new_a);
                 self.set_asr_flags(new_a, c);
             }
+            0x24 => {
+                // BEQ Adr
+                let z = self.reg.cc.get(CCFlag::Z);
+                if z {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x28 => {
+                // BCS Adr
+                let c = self.reg.cc.get(CCFlag::C);
+                if c {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x29 => {
+                // BCC Adr
+                let c = self.reg.cc.get(CCFlag::C);
+                if !c {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x2a => {
+                // BHI Adr
+                let c = self.reg.cc.get(CCFlag::C);
+                let z = self.reg.cc.get(CCFlag::Z);
+                if !(c || z) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x2c => {
+                // BGT Adr
+                let n = self.reg.cc.get(CCFlag::N);
+                let v = self.reg.cc.get(CCFlag::V);
+                let z = self.reg.cc.get(CCFlag::Z);
+                if !(n == v || z) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
+            0x2d => {
+                // BGE Adr
+                if self.reg.cc.get(CCFlag::N) == self.reg.cc.get(CCFlag::V) {
+                    let offset = self.memory_at(self.reg.pc);
+                    let (new_pc, _, _) = self.reg.pc + offset;
+                    self.reg.pc.set(new_pc);
+                }
+            }
             0x3b => {
                 // ASL Adr
                 let adr = self.memory_at(self.reg.pc);
