@@ -43,7 +43,11 @@ impl Register {
 
 /// 8-bit addition with optional carry-in
 /// Returns: (sum, c_flag, v_flag)
-pub fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
+pub fn add<T, K>(x: T, y: K, cin: bool) -> (u8, bool, bool)
+where
+    T: Into<u8>,
+    K: Into<u8>,
+{
     let x = x.into();
     let y = y.into();
     let (sum1, c1) = x.overflowing_add(y);
@@ -57,10 +61,31 @@ pub fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
     (sum2, c1 || c2, v)
 }
 
+pub fn sub<T, K>(x: T, y: K) -> (u8, bool, bool)
+where
+    T: Into<u8>,
+    K: Into<u8>,
+{
+    let x = x.into();
+    let y = y.into();
+    let (diff, c) = x.overflowing_sub(y);
+
+    let r7 = diff.bit(7);
+    let x7 = x.bit(7);
+    let y7 = y.bit(7);
+    let v = (r7 && !x7 && y7) || (!r7 && x7 && !y7);
+
+    (diff, c, v)
+}
+
 /// Logical Shift Left
 /// (x << y)
 /// Returns: (result, c_flag, v_flag)
-pub fn shl<T: Into<u8>>(x: T, y: T) -> (u8, bool, bool) {
+pub fn shl<T, K>(x: T, y: K) -> (u8, bool, bool)
+where
+    T: Into<u8>,
+    K: Into<u8>,
+{
     let x = x.into();
     let y = y.into();
     let (res, c) = x.overflowing_shl(y as u32);

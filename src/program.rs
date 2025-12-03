@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register, asr};
+use crate::register::{GetBit, Register, asr, sub};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -524,6 +524,12 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0x97 => {
+                // CMPA #Data
+                let data = self.memory_at(self.reg.pc);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.set_cmp_flags(diff, c, v);
+            }
             0x98 => {
                 // BITA #Data
                 let data = self.memory_at(self.reg.pc);
@@ -546,6 +552,24 @@ impl Program {
                 let result = self.reg.a & data;
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0x9c => {
+                // CMPX #Data
+                let data = self.memory_at(self.reg.pc);
+                let (diff, c, v) = sub(self.reg.x, data);
+                self.set_cmp_flags(diff, c, v);
+            }
+            0x9d => {
+                // CMPY #Data
+                let data = self.memory_at(self.reg.pc);
+                let (diff, c, v) = sub(self.reg.y, data);
+                self.set_cmp_flags(diff, c, v);
+            }
+            0x9e => {
+                // CMPSP #Data
+                let data = self.memory_at(self.reg.pc);
+                let (diff, c, v) = sub(self.reg.sp, data);
+                self.set_cmp_flags(diff, c, v);
             }
             0xa0 => {
                 // LDX Adr
@@ -576,6 +600,13 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0xa7 => {
+                // CMPA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.set_cmp_flags(diff, c, v);
+            }
             0xa8 => {
                 // BITA Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -589,6 +620,27 @@ impl Program {
                 let result = self.reg.a & self.memory_at(adr);
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xac => {
+                // CMPX Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.x, data);
+                self.set_cmp_flags(diff, c, v);
+            }
+            0xad => {
+                // CMPY Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.y, data);
+                self.set_cmp_flags(diff, c, v);
+            }
+            0xae => {
+                // CMPSP Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.sp, data);
+                self.set_cmp_flags(diff, c, v);
             }
             0xb0 => {
                 // LDX n,SP
@@ -623,6 +675,14 @@ impl Program {
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
             }
+            0xb7 => {
+                // CMPA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.set_cmp_flags(diff, c, v);
+            }
             0xb8 => {
                 // BITA n,SP
                 let n = self.memory_at(self.reg.pc);
@@ -638,6 +698,22 @@ impl Program {
                 let result = self.reg.a & data;
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xbc => {
+                // CMPX n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.x, data);
+                self.set_cmp_flags(diff, c, v);
+            }
+            0xbd => {
+                // CMPY n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.y, data);
+                self.set_cmp_flags(diff, c, v);
             }
             0xc0 => {
                 // LDX n,X
@@ -671,6 +747,14 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
+            }
+            0xc7 => {
+                // CMPA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.set_cmp_flags(diff, c, v);
             }
             0xc8 => {
                 // BITA n,X
@@ -721,6 +805,14 @@ impl Program {
                 self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
                 self.reg.cc.set(CCFlag::V, v);
                 self.reg.cc.set(CCFlag::C, c);
+            }
+            0xd7 => {
+                // CMPA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.set_cmp_flags(diff, c, v);
             }
             0xd8 => {
                 // BITA n,Y
@@ -941,6 +1033,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, true);
         self.reg.cc.set(CCFlag::V, false);
         self.reg.cc.set(CCFlag::C, false);
+    }
+
+    fn set_cmp_flags(&mut self, diff: u8, c: bool, v: bool) {
+        self.reg.cc.set(CCFlag::N, diff.bit(7));
+        self.reg.cc.set(CCFlag::Z, diff == 0);
+        self.reg.cc.set(CCFlag::C, c);
+        self.reg.cc.set(CCFlag::V, v);
     }
 
     fn todo(&mut self, instruction: u8) {
