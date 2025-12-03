@@ -218,6 +218,57 @@ impl Program {
                 self.reg.cc.disable(CCFlag::V);
                 self.reg.cc.disable(CCFlag::C);
             }
+            0x0b => {
+                // ASLA
+                let (new_a, c, v) = self.reg.a << 1;
+                self.reg.a.set(new_a);
+                self.set_asl_flags(new_a, c, v);
+            }
+            0x3b => {
+                // ASL Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x4b => {
+                // ASL n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x5b => {
+                // ASL n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x6b => {
+                // ASL A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x7b => {
+                // ASL n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x8b => {
+                // ASL A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
             0x90 => {
                 // LDX #Data
                 let data = self.memory_at(self.reg.pc);
@@ -564,9 +615,7 @@ impl Program {
                 self.reg.a.set(self.memory_at(self.reg.y));
                 self.set_lda_flags();
             }
-            _ => {
-                self.debug_log(format!("Not yet implemented: {:02x}", instruction));
-            }
+            _ => self.todo(instruction),
         };
 
         self.clock_count += clock_cycles as u32;
@@ -604,9 +653,15 @@ impl Program {
         self.reg.cc.disable(CCFlag::V);
     }
 
-    fn todo(&mut self, instruction: u8, clk: u32) -> u32 {
+    fn set_asl_flags(&mut self, new_val: u8, c: bool, v: bool) {
+        self.reg.cc.set(CCFlag::N, new_val.bit(7));
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::C, c);
+        self.reg.cc.set(CCFlag::V, v);
+    }
+
+    fn todo(&mut self, instruction: u8) {
         self.debug_log(format!("Not yet implemented: {:02x}", instruction));
-        clk
     }
 }
 

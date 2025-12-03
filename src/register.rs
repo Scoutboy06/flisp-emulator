@@ -57,6 +57,14 @@ fn add<T: Into<u8>>(x: T, y: T, cin: bool) -> (u8, bool, bool) {
     (sum2, c1 || c2, v)
 }
 
+fn shl<T: Into<u8>>(x: T, y: T) -> (u8, bool, bool) {
+    let x = x.into();
+    let y = y.into();
+    let (res, c) = x.overflowing_shl(y as u32);
+    let v = x.bit(7);
+    (res, c, v)
+}
+
 impl Into<u8> for Register {
     fn into(self) -> u8 {
         self.data
@@ -70,11 +78,11 @@ impl From<u8> for Register {
 }
 
 impl ops::Add for Register {
-    type Output = (u8, bool);
+    type Output = (u8, bool, bool);
     /// 8-bit addition
     /// Returns: (sum, c_flag, v_flag)
     fn add(self, rhs: Self) -> Self::Output {
-        self.data.overflowing_add(rhs.data)
+        add(self.data, rhs.data, false)
     }
 }
 
@@ -114,6 +122,13 @@ impl ops::BitAnd<Register> for u8 {
     type Output = u8;
     fn bitand(self, rhs: Register) -> Self::Output {
         self & rhs.data
+    }
+}
+
+impl ops::Shl<u8> for Register {
+    type Output = (u8, bool, bool);
+    fn shl(self, rhs: u8) -> Self::Output {
+        shl(self.data, rhs)
     }
 }
 
