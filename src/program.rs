@@ -215,6 +215,12 @@ impl Program {
                 let result = self.reg.cc.data & data;
                 self.reg.cc.overwrite(result);
             }
+            0x02 => {
+                // ORCC #Data
+                let data = self.memory_at(self.reg.pc);
+                let result = self.reg.cc.data | data;
+                self.reg.cc.overwrite(result);
+            }
             0x05 => {
                 // CLRA
                 self.reg.a.set(0);
@@ -908,6 +914,13 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_anda_flags();
             }
+            0x9a => {
+                // ORA #Data
+                let data = self.memory_at(self.reg.pc);
+                let result = self.reg.a.get() | data;
+                self.reg.a.set(result);
+                self.set_ora_flags(result);
+            }
             0x9b => {
                 // EORA #Data
                 let data = self.memory_at(self.reg.pc);
@@ -992,6 +1005,14 @@ impl Program {
                 let result = self.reg.a & self.memory_at(adr);
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xaa => {
+                // ORA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() | data;
+                self.reg.a.set(result);
+                self.set_ora_flags(result);
             }
             0xab => {
                 // EORA Adr
@@ -1089,6 +1110,15 @@ impl Program {
                 let result = self.reg.a & data;
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xba => {
+                // ORA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() | data;
+                self.reg.a.set(result);
+                self.set_ora_flags(result);
             }
             0xbb => {
                 // EORA n,SP
@@ -1190,6 +1220,15 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_anda_flags();
             }
+            0xca => {
+                // ORA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() | data;
+                self.reg.a.set(result);
+                self.set_ora_flags(result);
+            }
             0xcb => {
                 // EORA n,X
                 let n = self.memory_at(self.reg.pc);
@@ -1285,6 +1324,15 @@ impl Program {
                 let result = self.reg.a & data;
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xda => {
+                // ORA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() | data;
+                self.reg.a.set(result);
+                self.set_ora_flags(result);
             }
             0xdb => {
                 // EORA n,Y
@@ -1534,6 +1582,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, new_val == 0);
         self.reg.cc.set(CCFlag::V, v);
         self.reg.cc.set(CCFlag::C, old_val != 0);
+    }
+
+    fn set_ora_flags(&mut self, result: u8) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
+        self.reg.cc.disable(CCFlag::V);
+        // C is unaffected by ORA
     }
 
     fn todo(&mut self, instruction: u8) {
