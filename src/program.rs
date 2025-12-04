@@ -832,6 +832,13 @@ impl Program {
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
+            0xa6 => {
+                // ADDA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (sum, c, v) = self.memory_at(adr) + self.reg.a;
+                self.reg.a.set(sum);
+                self.set_add_flags(sum, c, v);
+            }
             0xa7 => {
                 // CMPA Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -918,6 +925,14 @@ impl Program {
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
+            0xb6 => {
+                // ADDA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (sum, c, v) = self.reg.a + self.memory_at(adr);
+                self.reg.a.set(sum);
+                self.set_add_flags(sum, c, v);
+            }
             0xb7 => {
                 // CMPA n,SP
                 let n = self.memory_at(self.reg.pc);
@@ -967,6 +982,12 @@ impl Program {
                 let (diff, c, v) = sub(self.reg.y, data);
                 self.set_cmp_flags(diff, c, v);
             }
+            0xbe => {
+                // LEASP n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.reg.sp.set(adr);
+            }
             0xbf => {
                 // EXG X,SP
                 let temp = self.reg.x.get();
@@ -1000,6 +1021,14 @@ impl Program {
                 let (adr, _, _) = n + self.reg.x;
                 let data = self.memory_at(adr);
                 let (sum, c, v) = self.reg.a.add_c(data);
+                self.reg.a.set(sum);
+                self.set_add_flags(sum, c, v);
+            }
+            0xc6 => {
+                // ADDA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (sum, c, v) = self.reg.a + self.memory_at(adr);
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
@@ -1037,6 +1066,24 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_eora_flags(result);
             }
+            0xcc => {
+                // LEAX n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.reg.x.set(adr);
+            }
+            0xcd => {
+                // LEAY n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.reg.y.set(adr);
+            }
+            0xce => {
+                // LEASP n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.reg.sp.set(adr);
+            }
             0xcf => {
                 // EXG Y,SP
                 let temp = self.reg.y.get();
@@ -1070,6 +1117,14 @@ impl Program {
                 let (adr, _, _) = n + self.reg.y;
                 let data = self.memory_at(adr);
                 let (sum, c, v) = self.reg.a.add_c(data);
+                self.reg.a.set(sum);
+                self.set_add_flags(sum, c, v);
+            }
+            0xd6 => {
+                // ADDA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (sum, c, v) = self.reg.a + self.memory_at(adr);
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
@@ -1107,36 +1162,23 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_eora_flags(result);
             }
-            0xa6 => {
-                // ADDA Adr
-                let adr = self.memory_at(self.reg.pc);
-                let (sum, c, v) = self.memory_at(adr) + self.reg.a;
-                self.reg.a.set(sum);
-                self.set_add_flags(sum, c, v);
-            }
-            0xb6 => {
-                // ADDA n,SP
+            0xdc => {
+                // LEAX n,SP
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.sp;
-                let (sum, c, v) = self.reg.a + self.memory_at(adr);
-                self.reg.a.set(sum);
-                self.set_add_flags(sum, c, v);
+                self.reg.x.set(adr);
             }
-            0xc6 => {
-                // ADDA n,X
+            0xdd => {
+                // LEAY n,SP
                 let n = self.memory_at(self.reg.pc);
-                let (adr, _, _) = n + self.reg.x;
-                let (sum, c, v) = self.reg.a + self.memory_at(adr);
-                self.reg.a.set(sum);
-                self.set_add_flags(sum, c, v);
+                let (adr, _, _) = n + self.reg.sp;
+                self.reg.y.set(adr);
             }
-            0xd6 => {
-                // ADDA n,Y
+            0xde => {
+                // LEASP n,Y
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
-                let (sum, c, v) = self.reg.a + self.memory_at(adr);
-                self.reg.a.set(sum);
-                self.set_add_flags(sum, c, v);
+                self.reg.sp.set(adr);
             }
             0xf0 => {
                 // LDA #Data
