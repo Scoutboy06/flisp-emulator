@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register, asr, sub};
+use crate::register::{GetBit, Register, add, asr, sub};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -215,9 +215,15 @@ impl Program {
                 self.reg.a.set(0);
                 self.set_clr_flags();
             }
+            0x07 => {
+                // INCA
+                let (_c, v) = self.reg.a.inc();
+                let new_a = self.reg.a.get();
+                self.set_inc_flags(new_a, v);
+            }
             0x08 => {
                 // DECA
-                let (c, v) = self.reg.a.dec();
+                let (_c, v) = self.reg.a.dec();
                 self.set_dec_flags(self.reg.a.get(), v);
             }
             0x0a => {
@@ -252,6 +258,19 @@ impl Program {
                 let offset = self.memory_at(self.reg.pc);
                 let (new_pc, _, _) = self.reg.pc + offset;
                 self.reg.pc.set(new_pc);
+            }
+            0x33 => {
+                // JMP Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.reg.pc.set(adr);
+            }
+            0x37 => {
+                // INC Adr
+                let adr = self.memory_at(self.reg.pc);
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
             }
             0x22 => {
                 // BMI Adr
@@ -420,6 +439,15 @@ impl Program {
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
             }
+            0x47 => {
+                // INC n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
+            }
             0x48 => {
                 // DEC n,SP
                 let n = self.memory_at(self.reg.pc);
@@ -453,12 +481,27 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x53 => {
+                // JMP n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.reg.pc.set(adr);
+            }
             0x55 => {
                 // CLR n,X
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.x;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x57 => {
+                // INC n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
             }
             0x58 => {
                 // DEC n,X
@@ -476,6 +519,19 @@ impl Program {
                 let new_val = !self.memory_at(adr);
                 self.memory[adr as usize].set(new_val);
                 self.set_com_flags(new_val);
+            }
+            0x63 => {
+                // JMP A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                self.reg.pc.set(adr);
+            }
+            0x67 => {
+                // INC A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
             }
             0x5b => {
                 // ASL n,X
@@ -528,12 +584,27 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x73 => {
+                // JMP n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.reg.pc.set(adr);
+            }
             0x75 => {
                 // CLR n,Y
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x77 => {
+                // INC n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
             }
             0x78 => {
                 // DEC n,Y
@@ -568,11 +639,24 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x83 => {
+                // JMP A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                self.reg.pc.set(adr);
+            }
             0x85 => {
                 // CLR A,Y
                 let (adr, _, _) = self.reg.a + self.reg.y;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x87 => {
+                // INC A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
             }
             0x88 => {
                 // DEC A,Y
@@ -1217,6 +1301,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, new_val == 0);
         self.reg.cc.set(CCFlag::V, v);
         // C is unaffected by DEC
+    }
+
+    fn set_inc_flags(&mut self, new_val: u8, v: bool) {
+        self.reg.cc.set(CCFlag::N, new_val.bit(7));
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::V, v);
+        // C is unaffected by INC
     }
 
     fn todo(&mut self, instruction: u8) {
