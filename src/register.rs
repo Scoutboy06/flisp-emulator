@@ -91,6 +91,17 @@ pub fn shl<T: Into<u8>>(x: T) -> (u8, bool, bool) {
     (res, c, v)
 }
 
+/// Logical Shift Right
+/// (x >> 1)
+/// Returns: (result, c_flag, v_flag)
+pub fn shr<T: Into<u8>>(x: T) -> (u8, bool, bool) {
+    let x = x.into();
+    let c = x.bit(0);
+    let res = x >> 1;
+    let v = res.bit(7) != x.bit(7);
+    (res, c, v)
+}
+
 /// Arithmetic Shift Right
 /// (x >> 1) with sign bit preserved
 /// Returns: (result, c_flag)

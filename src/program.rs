@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register, add, shl, shr_signed, sub};
+use crate::register::{GetBit, Register, add, shl, shr, shr_signed, sub};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -238,6 +238,12 @@ impl Program {
                 self.reg.a.set(new_a);
                 self.set_asl_flags(new_a, c, v);
             }
+            0x0c => {
+                // LSRA
+                let (new_a, c, v) = shr(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_lsr_flags(new_a, c, v);
+            }
             0x0f => {
                 // ASRA
                 let (new_a, c) = shr_signed(self.reg.a.get());
@@ -258,26 +264,6 @@ impl Program {
                 let offset = self.memory_at(self.reg.pc);
                 let (new_pc, _, _) = self.reg.pc + offset;
                 self.reg.pc.set(new_pc);
-            }
-            0x33 => {
-                // JMP Adr
-                let adr = self.memory_at(self.reg.pc);
-                self.reg.pc.set(adr);
-            }
-            0x34 => {
-                // JSR Adr
-                self.reg.sp.dec();
-                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
-                let adr = self.memory_at(self.reg.pc);
-                self.reg.pc.set(adr);
-            }
-            0x37 => {
-                // INC Adr
-                let adr = self.memory_at(self.reg.pc);
-                let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
-                self.memory[adr as usize].set(new_val);
-                self.set_inc_flags(new_val, v);
             }
             0x22 => {
                 // BMI Adr
@@ -404,18 +390,31 @@ impl Program {
                     self.reg.pc.set(new_pc);
                 }
             }
-            0x3b => {
-                // ASL Adr / LSL Adr
+            0x33 => {
+                // JMP Adr
                 let adr = self.memory_at(self.reg.pc);
-                let (new_val, c, v) = shl(self.memory_at(adr));
-                self.memory[adr as usize].set(new_val);
-                self.set_asl_flags(new_val, c, v);
+                self.reg.pc.set(adr);
+            }
+            0x34 => {
+                // JSR Adr
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
+                let adr = self.memory_at(self.reg.pc);
+                self.reg.pc.set(adr);
             }
             0x35 => {
                 // CLR Adr
                 let adr = self.memory_at(self.reg.pc);
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x37 => {
+                // INC Adr
+                let adr = self.memory_at(self.reg.pc);
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = add(val, 1, false);
+                self.memory[adr as usize].set(new_val);
+                self.set_inc_flags(new_val, v);
             }
             0x38 => {
                 // DEC Adr
@@ -431,6 +430,20 @@ impl Program {
                 let new_val = !self.memory_at(adr);
                 self.memory[adr as usize].set(new_val);
                 self.set_com_flags(new_val);
+            }
+            0x3b => {
+                // ASL Adr / LSL Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (new_val, c, v) = shl(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x3c => {
+                // LSR Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (new_val, c, v) = shr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_lsr_flags(new_val, c, v);
             }
             0x3f => {
                 // ASR Adr
@@ -479,6 +492,14 @@ impl Program {
                 let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
+            }
+            0x4c => {
+                // LSR n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (new_val, c, v) = shr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_lsr_flags(new_val, c, v);
             }
             0x4f => {
                 // ASR n,SP
@@ -543,6 +564,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
+            0x5c => {
+                // LSR n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c, v) = shr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_lsr_flags(new_val, c, v);
+            }
             0x5f => {
                 // ASR n,X
                 let n = self.memory_at(self.reg.pc);
@@ -598,6 +627,13 @@ impl Program {
                 let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
+            }
+            0x6c => {
+                // LSR A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let (new_val, c, v) = shr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_lsr_flags(new_val, c, v);
             }
             0x6f => {
                 // ASR A,X
@@ -661,6 +697,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
+            0x7c => {
+                // LSR n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (new_val, c, v) = shr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_lsr_flags(new_val, c, v);
+            }
             0x7f => {
                 // ASR n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -716,6 +760,13 @@ impl Program {
                 let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
+            }
+            0x8c => {
+                // LSR A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let (new_val, c, v) = shr(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_lsr_flags(new_val, c, v);
             }
             0x8f => {
                 // ASR A,Y
@@ -1387,6 +1438,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, new_val == 0);
         self.reg.cc.set(CCFlag::V, v);
         // C is unaffected by INC
+    }
+
+    fn set_lsr_flags(&mut self, new_val: u8, c: bool, v: bool) {
+        self.reg.cc.disable(CCFlag::N);
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::V, v);
+        self.reg.cc.set(CCFlag::C, c);
     }
 
     fn todo(&mut self, instruction: u8) {
