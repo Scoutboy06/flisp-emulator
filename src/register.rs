@@ -81,24 +81,20 @@ where
 }
 
 /// Logical Shift Left
-/// (x << y)
+/// (x << 1)
 /// Returns: (result, c_flag, v_flag)
-pub fn shl<T, K>(x: T, y: K) -> (u8, bool, bool)
-where
-    T: Into<u8>,
-    K: Into<u8>,
-{
+pub fn shl<T: Into<u8>>(x: T) -> (u8, bool, bool) {
     let x = x.into();
-    let y = y.into();
-    let (res, c) = x.overflowing_shl(y as u32);
-    let v = x.bit(7);
+    let c = x.bit(7);
+    let (res, _) = x.overflowing_shl(1);
+    let v = c != res.bit(7);
     (res, c, v)
 }
 
 /// Arithmetic Shift Right
 /// (x >> 1) with sign bit preserved
 /// Returns: (result, c_flag)
-pub fn asr<T: Into<u8>>(x: T) -> (u8, bool) {
+pub fn shr_signed<T: Into<u8>>(x: T) -> (u8, bool) {
     let x = x.into();
     let c = x.bit(0);
     let sign_bit = x.bit(7);
@@ -163,13 +159,6 @@ impl ops::BitAnd<Register> for u8 {
     type Output = u8;
     fn bitand(self, rhs: Register) -> Self::Output {
         self & rhs.data
-    }
-}
-
-impl ops::Shl<u8> for Register {
-    type Output = (u8, bool, bool);
-    fn shl(self, rhs: u8) -> Self::Output {
-        shl(self.data, rhs)
     }
 }
 

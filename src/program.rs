@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register, add, asr, sub};
+use crate::register::{GetBit, Register, add, shl, shr_signed, sub};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -233,14 +233,14 @@ impl Program {
                 self.set_com_flags(new_a);
             }
             0x0b => {
-                // ASLA
-                let (new_a, c, v) = self.reg.a << 1;
+                // ASLA / LSLA
+                let (new_a, c, v) = shl(self.reg.a);
                 self.reg.a.set(new_a);
                 self.set_asl_flags(new_a, c, v);
             }
             0x0f => {
                 // ASRA
-                let (new_a, c) = asr(self.reg.a.get());
+                let (new_a, c) = shr_signed(self.reg.a.get());
                 self.reg.a.set(new_a);
                 self.set_asr_flags(new_a, c);
             }
@@ -405,9 +405,9 @@ impl Program {
                 }
             }
             0x3b => {
-                // ASL Adr
+                // ASL Adr / LSL Adr
                 let adr = self.memory_at(self.reg.pc);
-                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
@@ -435,7 +435,7 @@ impl Program {
             0x3f => {
                 // ASR Adr
                 let adr = self.memory_at(self.reg.pc);
-                let (new_val, c) = asr(self.memory_at(adr));
+                let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
@@ -473,10 +473,10 @@ impl Program {
                 self.set_com_flags(new_val);
             }
             0x4b => {
-                // ASL n,SP
+                // ASL n,SP / LSL n,SP
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.sp;
-                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
@@ -484,7 +484,7 @@ impl Program {
                 // ASR n,SP
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.sp;
-                let (new_val, c) = asr(self.memory_at(adr));
+                let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
@@ -535,6 +535,22 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_com_flags(new_val);
             }
+            0x5b => {
+                // ASL n,X / LSL n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c, v) = shl(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asl_flags(new_val, c, v);
+            }
+            0x5f => {
+                // ASR n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c) = shr_signed(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_asr_flags(new_val, c);
+            }
             0x63 => {
                 // JMP A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
@@ -554,22 +570,6 @@ impl Program {
                 let (new_val, _c, v) = add(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
-            }
-            0x5b => {
-                // ASL n,X
-                let n = self.memory_at(self.reg.pc);
-                let (adr, _, _) = n + self.reg.x;
-                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
-                self.memory[adr as usize].set(new_val);
-                self.set_asl_flags(new_val, c, v);
-            }
-            0x5f => {
-                // ASR n,X
-                let n = self.memory_at(self.reg.pc);
-                let (adr, _, _) = n + self.reg.x;
-                let (new_val, c) = asr(self.memory_at(adr));
-                self.memory[adr as usize].set(new_val);
-                self.set_asr_flags(new_val, c);
             }
             0x65 => {
                 // CLR A,X
@@ -593,16 +593,16 @@ impl Program {
                 self.set_com_flags(new_val);
             }
             0x6b => {
-                // ASL A,X
+                // ASL A,X / LSL A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
-                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
             0x6f => {
                 // ASR A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
-                let (new_val, c) = asr(self.memory_at(adr));
+                let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
@@ -654,10 +654,10 @@ impl Program {
                 self.set_com_flags(new_val);
             }
             0x7b => {
-                // ASL n,Y
+                // ASL n,Y / LSL n,Y
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
-                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
@@ -665,7 +665,7 @@ impl Program {
                 // ASR n,Y
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
-                let (new_val, c) = asr(self.memory_at(adr));
+                let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
@@ -711,16 +711,16 @@ impl Program {
                 self.set_com_flags(new_val);
             }
             0x8b => {
-                // ASL A,Y
+                // ASL A,Y / LSL A,Y
                 let (adr, _, _) = self.reg.a + self.reg.y;
-                let (new_val, c, v) = Register::from(self.memory_at(adr)) << 1;
+                let (new_val, c, v) = shl(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asl_flags(new_val, c, v);
             }
             0x8f => {
                 // ASR A,Y
                 let (adr, _, _) = self.reg.a + self.reg.y;
-                let (new_val, c) = asr(self.memory_at(adr));
+                let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
