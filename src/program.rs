@@ -626,10 +626,7 @@ impl Program {
                 let data = self.memory_at(self.reg.pc);
                 let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0x97 => {
                 // CMPA #Data
@@ -648,10 +645,7 @@ impl Program {
                 let data = self.memory_at(self.reg.pc);
                 let (sum, c, v) = self.reg.a + data;
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, sum == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0x99 => {
                 // ANDA #Data
@@ -685,6 +679,12 @@ impl Program {
                 let (diff, c, v) = sub(self.reg.sp, data);
                 self.set_cmp_flags(diff, c, v);
             }
+            0x9f => {
+                // EXG A,CC
+                let temp = self.reg.a.get();
+                self.reg.a.set(self.reg.cc.data);
+                self.reg.cc.data = temp & 0b1111; // Keep only lower 4 bits (N,Z,V,C)
+            }
             0xa0 => {
                 // LDX Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -709,10 +709,7 @@ impl Program {
                 let data = self.memory_at(adr);
                 let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xa7 => {
                 // CMPA Adr
@@ -792,10 +789,7 @@ impl Program {
                 let data = self.memory_at(adr);
                 let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xb7 => {
                 // CMPA n,SP
@@ -874,10 +868,7 @@ impl Program {
                 let data = self.memory_at(adr);
                 let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xc7 => {
                 // CMPA n,X
@@ -941,10 +932,7 @@ impl Program {
                 let data = self.memory_at(adr);
                 let (sum, c, v) = self.reg.a.add_c(data);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, self.reg.a == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xd7 => {
                 // CMPA n,Y
@@ -985,10 +973,7 @@ impl Program {
                 let adr = self.memory_at(self.reg.pc);
                 let (sum, c, v) = self.memory_at(adr) + self.reg.a;
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, sum == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xb6 => {
                 // ADDA n,SP
@@ -996,10 +981,7 @@ impl Program {
                 let (adr, _, _) = n + self.reg.sp;
                 let (sum, c, v) = self.reg.a + self.memory_at(adr);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, sum == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xc6 => {
                 // ADDA n,X
@@ -1007,10 +989,7 @@ impl Program {
                 let (adr, _, _) = n + self.reg.x;
                 let (sum, c, v) = self.reg.a + self.memory_at(adr);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, sum == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xd6 => {
                 // ADDA n,Y
@@ -1018,10 +997,7 @@ impl Program {
                 let (adr, _, _) = n + self.reg.y;
                 let (sum, c, v) = self.reg.a + self.memory_at(adr);
                 self.reg.a.set(sum);
-                self.reg.cc.set(CCFlag::N, sum.bit(7));
-                self.reg.cc.set(CCFlag::Z, sum == 0);
-                self.reg.cc.set(CCFlag::V, v);
-                self.reg.cc.set(CCFlag::C, c);
+                self.set_add_flags(sum, c, v);
             }
             0xf0 => {
                 // LDA #Data
@@ -1125,6 +1101,13 @@ impl Program {
         self.clock_count += clock_cycles as u32;
         let new_pc = (self.reg.pc + (mem_use - 1)).0;
         self.reg.pc.set(new_pc);
+    }
+
+    fn set_add_flags(&mut self, result: u8, c: bool, v: bool) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
+        self.reg.cc.set(CCFlag::C, c);
+        self.reg.cc.set(CCFlag::V, v);
     }
 
     fn set_lda_flags(&mut self) {
