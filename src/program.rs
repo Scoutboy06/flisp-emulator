@@ -263,6 +263,30 @@ impl Program {
                 self.reg.sp.dec();
                 self.memory[self.reg.sp.get() as usize].set(self.reg.cc.data);
             }
+            0x14 => {
+                // PULA
+                let val = self.memory_at(self.reg.sp);
+                self.reg.a.set(val);
+                self.reg.sp.inc();
+            }
+            0x15 => {
+                // PULX
+                let val = self.memory_at(self.reg.sp);
+                self.reg.x.set(val);
+                self.reg.sp.inc();
+            }
+            0x16 => {
+                // PULY
+                let val = self.memory_at(self.reg.sp);
+                self.reg.y.set(val);
+                self.reg.sp.inc();
+            }
+            0x17 => {
+                // PULC
+                let val = self.memory_at(self.reg.sp);
+                self.reg.cc.overwrite(val);
+                self.reg.sp.inc();
+            }
             0x0a => {
                 // COMA
                 let new_a = !self.reg.a.get();
