@@ -220,6 +220,12 @@ impl Program {
                 self.reg.a.set(0);
                 self.set_clr_flags();
             }
+            0x06 => {
+                // NEGA
+                let (new_a, _c, v) = sub(0, self.reg.a.get());
+                self.set_neg_flags(new_a, self.reg.a.get(), v);
+                self.reg.a.set(new_a);
+            }
             0x07 => {
                 // INCA
                 let (_c, v) = self.reg.a.inc();
@@ -433,6 +439,14 @@ impl Program {
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
             }
+            0x36 => {
+                // NEG Adr
+                let adr = self.memory_at(self.reg.pc);
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = sub(0, val);
+                self.memory[adr as usize].set(new_val);
+                self.set_neg_flags(new_val, val, v);
+            }
             0x37 => {
                 // INC Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -483,6 +497,15 @@ impl Program {
                 let (adr, _, _) = n + self.reg.sp;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x46 => {
+                // NEG n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = sub(0, val);
+                self.memory[adr as usize].set(new_val);
+                self.set_neg_flags(new_val, val, v);
             }
             0x47 => {
                 // INC n,SP
@@ -554,6 +577,15 @@ impl Program {
                 let (adr, _, _) = n + self.reg.x;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x56 => {
+                // NEG n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = sub(0, val);
+                self.memory[adr as usize].set(new_val);
+                self.set_neg_flags(new_val, val, v);
             }
             0x57 => {
                 // INC n,X
@@ -631,6 +663,14 @@ impl Program {
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
             }
+            0x66 => {
+                // NEG A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = sub(0, val);
+                self.memory[adr as usize].set(new_val);
+                self.set_neg_flags(new_val, val, v);
+            }
             0x68 => {
                 // DEC A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
@@ -687,6 +727,15 @@ impl Program {
                 let (adr, _, _) = n + self.reg.y;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x76 => {
+                // NEG n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = sub(0, val);
+                self.memory[adr as usize].set(new_val);
+                self.set_neg_flags(new_val, val, v);
             }
             0x77 => {
                 // INC n,Y
@@ -755,6 +804,14 @@ impl Program {
                 let (adr, _, _) = self.reg.a + self.reg.y;
                 self.memory[adr as usize].set(0);
                 self.set_clr_flags();
+            }
+            0x86 => {
+                // NEG A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let val = self.memory_at(adr);
+                let (new_val, _c, v) = sub(0, val);
+                self.memory[adr as usize].set(new_val);
+                self.set_neg_flags(new_val, val, v);
             }
             0x87 => {
                 // INC A,Y
@@ -1470,6 +1527,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, new_val == 0);
         self.reg.cc.set(CCFlag::V, v);
         self.reg.cc.set(CCFlag::C, c);
+    }
+
+    fn set_neg_flags(&mut self, new_val: u8, old_val: u8, v: bool) {
+        self.reg.cc.set(CCFlag::N, new_val.bit(7));
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::V, v);
+        self.reg.cc.set(CCFlag::C, old_val != 0);
     }
 
     fn todo(&mut self, instruction: u8) {
