@@ -660,6 +660,13 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_anda_flags();
             }
+            0x9b => {
+                // EORA #Data
+                let data = self.memory_at(self.reg.pc);
+                let result = self.reg.a.get() ^ data;
+                self.reg.a.set(result);
+                self.set_eora_flags(result);
+            }
             0x9c => {
                 // CMPX #Data
                 let data = self.memory_at(self.reg.pc);
@@ -727,6 +734,14 @@ impl Program {
                 let result = self.reg.a & self.memory_at(adr);
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xab => {
+                // EORA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() ^ data;
+                self.reg.a.set(result);
+                self.set_eora_flags(result);
             }
             0xac => {
                 // CMPX Adr
@@ -806,6 +821,15 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_anda_flags();
             }
+            0xbb => {
+                // EORA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() ^ data;
+                self.reg.a.set(result);
+                self.set_eora_flags(result);
+            }
             0xbc => {
                 // CMPX n,SP
                 let n = self.memory_at(self.reg.pc);
@@ -880,6 +904,15 @@ impl Program {
                 self.reg.a.set(result);
                 self.set_anda_flags();
             }
+            0xcb => {
+                // EORA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() ^ data;
+                self.reg.a.set(result);
+                self.set_eora_flags(result);
+            }
             0xd0 => {
                 // LDX n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -937,6 +970,15 @@ impl Program {
                 let result = self.reg.a & data;
                 self.reg.a.set(result);
                 self.set_anda_flags();
+            }
+            0xdb => {
+                // EORA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let result = self.reg.a.get() ^ data;
+                self.reg.a.set(result);
+                self.set_eora_flags(result);
             }
             0xa6 => {
                 // ADDA Adr
@@ -1097,6 +1139,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, self.reg.x == 0);
         self.reg.cc.disable(CCFlag::V);
         // C is unaffected by LDX
+    }
+
+    fn set_eora_flags(&mut self, result: u8) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
+        self.reg.cc.disable(CCFlag::V);
+        // C is unaffected by EORA
     }
 
     fn set_ldy_flags(&mut self) {
