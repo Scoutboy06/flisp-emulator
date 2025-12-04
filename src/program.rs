@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register, add, shl, shr, shr_signed, sub};
+use crate::register::{GetBit, Register, add, rotate_left, shl, shr, shr_signed, sub};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -198,10 +198,7 @@ impl Program {
         let (mem_use, clock_cycles) = get_instruction_size_and_time(instruction);
 
         if mem_use == 0 || clock_cycles == 0 {
-            panic!(
-                "Undefined behavior: tried executing invalid instruction: {:02x}",
-                instruction
-            );
+            panic!("Tried executing invalid instruction: {:02x}", instruction);
         }
 
         match instruction {
@@ -304,6 +301,12 @@ impl Program {
                 let (new_a, c, v) = shr(self.reg.a);
                 self.reg.a.set(new_a);
                 self.set_lsr_flags(new_a, c, v);
+            }
+            0x0d => {
+                // ROLA
+                let (new_a, c) = rotate_left(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_rol_flags(new_a, c);
             }
             0x0f => {
                 // ASRA
@@ -514,6 +517,13 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_lsr_flags(new_val, c, v);
             }
+            0x3d => {
+                // ROL Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (new_val, c) = rotate_left(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_rol_flags(new_val, c);
+            }
             0x3f => {
                 // ASR Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -578,6 +588,14 @@ impl Program {
                 let (new_val, c, v) = shr(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_lsr_flags(new_val, c, v);
+            }
+            0x4d => {
+                // ROL n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (new_val, c) = rotate_left(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_rol_flags(new_val, c);
             }
             0x4f => {
                 // ASR n,SP
@@ -659,6 +677,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_lsr_flags(new_val, c, v);
             }
+            0x5d => {
+                // ROL n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c) = rotate_left(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_rol_flags(new_val, c);
+            }
             0x5f => {
                 // ASR n,X
                 let n = self.memory_at(self.reg.pc);
@@ -729,6 +755,13 @@ impl Program {
                 let (new_val, c, v) = shr(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_lsr_flags(new_val, c, v);
+            }
+            0x6d => {
+                // ROL A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let (new_val, c) = rotate_left(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_rol_flags(new_val, c);
             }
             0x6f => {
                 // ASR A,X
@@ -809,6 +842,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_lsr_flags(new_val, c, v);
             }
+            0x7d => {
+                // ROL n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (new_val, c) = rotate_left(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_rol_flags(new_val, c);
+            }
             0x7f => {
                 // ASR n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -879,6 +920,13 @@ impl Program {
                 let (new_val, c, v) = shr(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_lsr_flags(new_val, c, v);
+            }
+            0x8d => {
+                // ROL A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let (new_val, c) = rotate_left(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_rol_flags(new_val, c);
             }
             0x8f => {
                 // ASR A,Y
@@ -1613,6 +1661,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, result == 0);
         self.reg.cc.disable(CCFlag::V);
         // C is unaffected by ORA
+    }
+
+    fn set_rol_flags(&mut self, new_val: u8, c: bool) {
+        self.reg.cc.set(CCFlag::N, new_val.bit(7));
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::V, new_val.bit(7) != c);
+        self.reg.cc.set(CCFlag::C, c);
     }
 
     fn todo(&mut self, instruction: u8) {
