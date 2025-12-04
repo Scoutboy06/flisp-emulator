@@ -74,7 +74,7 @@ pub struct Program {
     debug_logs: VecDeque<String>,
     reg: RegisterStore,
     q_state: QState,
-    clock_count: u32,
+    clk_count: u32,
     exit: bool,
 }
 
@@ -86,7 +86,7 @@ impl Default for Program {
             debug_logs: VecDeque::new(),
             reg: RegisterStore::default(),
             q_state: QState::Reset,
-            clock_count: 0,
+            clk_count: 0,
             exit: false,
         }
     }
@@ -136,6 +136,10 @@ impl Program {
         self.reg.ld
     }
 
+    pub fn clk_count(&self) -> u32 {
+        self.clk_count
+    }
+
     pub fn execute(&mut self) {
         while !self.exit {
             self.step();
@@ -160,6 +164,7 @@ impl Program {
     pub fn reset(&mut self) {
         self.q_state = QState::Reset;
         self.memory = self.source_memory.clone();
+        self.clk_count = 0;
         self.step();
     }
 
@@ -225,6 +230,26 @@ impl Program {
                 // DECA
                 let (_c, v) = self.reg.a.dec();
                 self.set_dec_flags(self.reg.a.get(), v);
+            }
+            0x10 => {
+                // PSHA
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.a);
+            }
+            0x11 => {
+                // PSHX
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.x);
+            }
+            0x12 => {
+                // PSHY
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.y);
+            }
+            0x13 => {
+                // PSHC
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.cc.data);
             }
             0x0a => {
                 // COMA
@@ -1330,7 +1355,7 @@ impl Program {
             _ => self.todo(instruction),
         };
 
-        self.clock_count += clock_cycles as u32;
+        self.clk_count += clock_cycles as u32;
         let new_pc = (self.reg.pc + (mem_use - 1)).0;
         self.reg.pc.set(new_pc);
     }

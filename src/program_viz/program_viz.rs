@@ -15,8 +15,8 @@ use std::io;
 use crate::{
     program::Program,
     program_viz::{
-        debug_viz::debug_viz, flags_viz::flags_viz, memory_viz::memory_viz,
-        register_viz::register_viz,
+        clk_cycles_viz::clk_cycles_viz, debug_viz::debug_viz, flags_viz::flags_viz,
+        memory_viz::memory_viz, register_viz::register_viz,
     },
 };
 
@@ -87,12 +87,17 @@ impl<'a> Widget for &ProgramVisualizer<'a> {
         ])
         .areas(area);
 
-        let [registers_area, flags_area] =
-            Layout::vertical([Constraint::Length(3), Constraint::Length(3)]).areas(col1);
+        let [registers_area, flags_area, clk_area] = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Length(3),
+            Constraint::Length(3),
+        ])
+        .areas(col1);
 
         memory_viz(self.program, col0, buf);
         register_viz(self.program, col1, buf);
         flags_viz(self.program, flags_area, buf);
+        clk_cycles_viz(self.program, clk_area, buf);
         debug_viz(self.program, col2, buf);
     }
 }
