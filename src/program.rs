@@ -761,6 +761,12 @@ impl Program {
                 let (diff, c, v) = sub(self.reg.sp, data);
                 self.set_cmp_flags(diff, c, v);
             }
+            0xaf => {
+                // EXG X,Y
+                let temp = self.reg.x.get();
+                self.reg.x.set(self.reg.y.get());
+                self.reg.y.set(temp);
+            }
             0xb0 => {
                 // LDX n,SP
                 let n = self.memory_at(self.reg.pc);
@@ -840,6 +846,12 @@ impl Program {
                 let (diff, c, v) = sub(self.reg.y, data);
                 self.set_cmp_flags(diff, c, v);
             }
+            0xbf => {
+                // EXG X,SP
+                let temp = self.reg.x.get();
+                self.reg.x.set(self.reg.sp.get());
+                self.reg.sp.set(temp);
+            }
             0xc0 => {
                 // LDX n,X
                 let n = self.memory_at(self.reg.pc);
@@ -903,6 +915,12 @@ impl Program {
                 let result = self.reg.a.get() ^ data;
                 self.reg.a.set(result);
                 self.set_eora_flags(result);
+            }
+            0xcf => {
+                // EXG Y,SP
+                let temp = self.reg.y.get();
+                self.reg.y.set(self.reg.sp.get());
+                self.reg.sp.set(temp);
             }
             0xd0 => {
                 // LDX n,Y
