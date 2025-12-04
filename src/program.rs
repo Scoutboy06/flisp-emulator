@@ -264,6 +264,13 @@ impl Program {
                 let adr = self.memory_at(self.reg.pc);
                 self.reg.pc.set(adr);
             }
+            0x34 => {
+                // JSR Adr
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
+                let adr = self.memory_at(self.reg.pc);
+                self.reg.pc.set(adr);
+            }
             0x37 => {
                 // INC Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -487,6 +494,14 @@ impl Program {
                 let (adr, _, _) = n + self.reg.x;
                 self.reg.pc.set(adr);
             }
+            0x54 => {
+                // JSR n,X
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.reg.pc.set(adr);
+            }
             0x55 => {
                 // CLR n,X
                 let n = self.memory_at(self.reg.pc);
@@ -522,6 +537,13 @@ impl Program {
             }
             0x63 => {
                 // JMP A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                self.reg.pc.set(adr);
+            }
+            0x64 => {
+                // JSR A,X
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
                 let (adr, _, _) = self.reg.a + self.reg.x;
                 self.reg.pc.set(adr);
             }
@@ -590,6 +612,14 @@ impl Program {
                 let (adr, _, _) = n + self.reg.y;
                 self.reg.pc.set(adr);
             }
+            0x74 => {
+                // JSR n,Y
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.reg.pc.set(adr);
+            }
             0x75 => {
                 // CLR n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -641,6 +671,13 @@ impl Program {
             }
             0x83 => {
                 // JMP A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                self.reg.pc.set(adr);
+            }
+            0x84 => {
+                // JSR A,Y
+                self.reg.sp.dec();
+                self.memory[self.reg.sp.get() as usize].set(self.reg.pc);
                 let (adr, _, _) = self.reg.a + self.reg.y;
                 self.reg.pc.set(adr);
             }
