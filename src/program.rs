@@ -1,6 +1,8 @@
 use std::collections::VecDeque;
 
-use crate::register::{GetBit, Register, add, rotate_left, shl, shr, shr_signed, sub};
+use crate::register::{
+    GetBit, Register, add, rotate_left, rotate_right, shl, shr, shr_signed, sub,
+};
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -308,6 +310,12 @@ impl Program {
                 self.reg.a.set(new_a);
                 self.set_rol_flags(new_a, c);
             }
+            0x0e => {
+                // RORA
+                let (new_a, c) = rotate_right(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_ror_flags(new_a, c);
+            }
             0x0f => {
                 // ASRA
                 let (new_a, c) = shr_signed(self.reg.a.get());
@@ -524,6 +532,13 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_rol_flags(new_val, c);
             }
+            0x3e => {
+                // ROR Adr
+                let adr = self.memory_at(self.reg.pc);
+                let (new_val, c) = rotate_right(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_ror_flags(new_val, c);
+            }
             0x3f => {
                 // ASR Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -596,6 +611,14 @@ impl Program {
                 let (new_val, c) = rotate_left(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_rol_flags(new_val, c);
+            }
+            0x4e => {
+                // ROR n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let (new_val, c) = rotate_right(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_ror_flags(new_val, c);
             }
             0x4f => {
                 // ASR n,SP
@@ -685,6 +708,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_rol_flags(new_val, c);
             }
+            0x5e => {
+                // ROR n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let (new_val, c) = rotate_right(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_ror_flags(new_val, c);
+            }
             0x5f => {
                 // ASR n,X
                 let n = self.memory_at(self.reg.pc);
@@ -762,6 +793,13 @@ impl Program {
                 let (new_val, c) = rotate_left(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_rol_flags(new_val, c);
+            }
+            0x6e => {
+                // ROR A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let (new_val, c) = rotate_right(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_ror_flags(new_val, c);
             }
             0x6f => {
                 // ASR A,X
@@ -850,6 +888,14 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_rol_flags(new_val, c);
             }
+            0x7e => {
+                // ROR n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let (new_val, c) = rotate_right(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_ror_flags(new_val, c);
+            }
             0x7f => {
                 // ASR n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -927,6 +973,13 @@ impl Program {
                 let (new_val, c) = rotate_left(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_rol_flags(new_val, c);
+            }
+            0x8e => {
+                // ROR A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let (new_val, c) = rotate_right(self.memory_at(adr));
+                self.memory[adr as usize].set(new_val);
+                self.set_ror_flags(new_val, c);
             }
             0x8f => {
                 // ASR A,Y
@@ -1666,7 +1719,14 @@ impl Program {
     fn set_rol_flags(&mut self, new_val: u8, c: bool) {
         self.reg.cc.set(CCFlag::N, new_val.bit(7));
         self.reg.cc.set(CCFlag::Z, new_val == 0);
-        self.reg.cc.set(CCFlag::V, new_val.bit(7) != c);
+        self.reg.cc.set(CCFlag::V, new_val.bit(6) != new_val.bit(7));
+        self.reg.cc.set(CCFlag::C, c);
+    }
+
+    fn set_ror_flags(&mut self, new_val: u8, c: bool) {
+        self.reg.cc.set(CCFlag::N, new_val.bit(7));
+        self.reg.cc.set(CCFlag::Z, new_val == 0);
+        self.reg.cc.set(CCFlag::V, new_val.bit(6) != new_val.bit(7));
         self.reg.cc.set(CCFlag::C, c);
     }
 

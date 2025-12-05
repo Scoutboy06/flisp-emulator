@@ -122,6 +122,15 @@ pub fn rotate_left<T: Into<u8>>(x: T) -> (u8, bool) {
     (res, c)
 }
 
+/// Rotate Right
+/// Returns: (result, c_flag)
+pub fn rotate_right<T: Into<u8>>(x: T) -> (u8, bool) {
+    let x = x.into();
+    let c = x.bit(0);
+    let res = (x >> 1) | ((c as u8) << 7);
+    (res, c)
+}
+
 impl Into<u8> for Register {
     fn into(self) -> u8 {
         self.data
