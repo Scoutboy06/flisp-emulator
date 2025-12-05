@@ -546,6 +546,25 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x43 => {
+                // RTS
+                let return_addr = self.memory_at(self.reg.sp);
+                self.reg.pc.set(return_addr);
+                self.reg.sp.inc();
+            }
+            0x44 => {
+                // RTI
+                self.reg.cc.overwrite(self.memory_at(self.reg.sp));
+                self.reg.sp.inc();
+                self.reg.a.set(self.memory_at(self.reg.sp));
+                self.reg.sp.inc();
+                self.reg.x.set(self.memory_at(self.reg.sp));
+                self.reg.sp.inc();
+                self.reg.y.set(self.memory_at(self.reg.sp));
+                self.reg.sp.inc();
+                self.reg.pc.set(self.memory_at(self.reg.sp));
+                self.reg.sp.inc();
+            }
             0x45 => {
                 // CLR n,SP
                 let n = self.memory_at(self.reg.pc);
