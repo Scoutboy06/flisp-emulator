@@ -28,23 +28,32 @@ impl Register {
         (res.1, res.2)
     }
 
-    /// Decrement register by 1
+    /// 8-bit decrement
+    ///
     /// Returns: (c_flag, v_flag)
+    ///
+    /// Performs self - 1
     pub fn dec(&mut self) -> (bool, bool) {
         let res = sub(self.data, 1);
         self.data = res.0;
         (res.1, res.2)
     }
 
-    /// 8-bit addition with carry-in
+    /// 8-bit addition with optional carry-in
+    ///
     /// Returns: (sum, c_flag, v_flag)
+    ///
+    /// Performs self + other + cin
     pub fn add_c<T: Into<Self>>(&self, other: T) -> (u8, bool, bool) {
         add(self.data, other.into().data, true)
     }
 }
 
 /// 8-bit addition with optional carry-in
+///
 /// Returns: (sum, c_flag, v_flag)
+///
+/// Performs x + y + cin
 pub fn add<T, K>(x: T, y: K, cin: bool) -> (u8, bool, bool)
 where
     T: Into<u8>,
@@ -63,6 +72,11 @@ where
     (sum2, c1 || c2, v)
 }
 
+/// 8-bit subtraction
+///
+/// Returns: (difference, c_flag, v_flag)
+///
+/// Performs x - y
 pub fn sub<T, K>(x: T, y: K) -> (u8, bool, bool)
 where
     T: Into<u8>,
@@ -75,14 +89,39 @@ where
     let r7 = diff.bit(7);
     let x7 = x.bit(7);
     let y7 = y.bit(7);
-    let v = (r7 && !x7 && y7) || (!r7 && x7 && !y7);
+    let v = (r7 && !x7 && !y7) || (!r7 && x7 && y7);
 
     (diff, c, v)
 }
 
+/// 8-bit subtraction with optional carry-in
+///
+/// Returns: (difference, c_flag, v_flag)
+///
+/// Performs x - y - cin
+pub fn sub_c<T, K>(x: T, y: K, cin: bool) -> (u8, bool, bool)
+where
+    T: Into<u8>,
+    K: Into<u8>,
+{
+    let x = x.into();
+    let y = y.into();
+    let (diff1, c1) = x.overflowing_sub(y);
+    let (diff2, c2) = diff1.overflowing_sub(cin as u8);
+
+    let r7 = diff2.bit(7);
+    let x7 = x.bit(7);
+    let y7 = y.bit(7);
+    let v = (r7 && !x7 && !y7) || (!r7 && x7 && y7);
+
+    (diff2, c1 || c2, v)
+}
+
 /// Logical Shift Left
-/// (x << 1)
+///
 /// Returns: (result, c_flag, v_flag)
+///
+/// Performs (x << 1)
 pub fn shl<T: Into<u8>>(x: T) -> (u8, bool, bool) {
     let x = x.into();
     let c = x.bit(7);
@@ -92,8 +131,10 @@ pub fn shl<T: Into<u8>>(x: T) -> (u8, bool, bool) {
 }
 
 /// Logical Shift Right
-/// (x >> 1)
+///
 /// Returns: (result, c_flag, v_flag)
+///
+/// Performs (x >> 1)
 pub fn shr<T: Into<u8>>(x: T) -> (u8, bool, bool) {
     let x = x.into();
     let c = x.bit(0);
@@ -103,8 +144,10 @@ pub fn shr<T: Into<u8>>(x: T) -> (u8, bool, bool) {
 }
 
 /// Arithmetic Shift Right
-/// (x >> 1) with sign bit preserved
+///
 /// Returns: (result, c_flag)
+///
+/// Performs (x >> 1) with sign bit preserved
 pub fn shr_signed<T: Into<u8>>(x: T) -> (u8, bool) {
     let x = x.into();
     let c = x.bit(0);
@@ -114,7 +157,10 @@ pub fn shr_signed<T: Into<u8>>(x: T) -> (u8, bool) {
 }
 
 /// Rotate Left
+///
 /// Returns: (result, c_flag)
+///
+/// Performs (x << 1) with bit 7 wrapped to bit 0
 pub fn rotate_left<T: Into<u8>>(x: T) -> (u8, bool) {
     let x = x.into();
     let c = x.bit(7);
@@ -123,7 +169,10 @@ pub fn rotate_left<T: Into<u8>>(x: T) -> (u8, bool) {
 }
 
 /// Rotate Right
+///
 /// Returns: (result, c_flag)
+///
+/// Performs (x >> 1) with bit 0 wrapped to bit 7
 pub fn rotate_right<T: Into<u8>>(x: T) -> (u8, bool) {
     let x = x.into();
     let c = x.bit(0);
