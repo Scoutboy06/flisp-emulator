@@ -1545,6 +1545,15 @@ impl Program {
                 self.reg.sp.set(self.memory_at(adr));
                 self.set_ldsp_flags();
             }
+            0xc3 => {
+                // SBCA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
+                self.reg.a.set(diff);
+                self.set_sbc_flags(diff, c, v);
+            }
             0xc4 => {
                 // SUBA n,X
                 let n = self.memory_at(self.reg.pc);
@@ -1924,7 +1933,6 @@ impl Program {
                 self.reg.a.set(self.memory_at(self.reg.y));
                 self.set_lda_flags();
             }
-            _ => self.todo(instruction),
         };
 
         self.clk_count += clock_cycles as u32;
