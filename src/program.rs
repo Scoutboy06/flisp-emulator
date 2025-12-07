@@ -246,6 +246,42 @@ impl Program {
                 // TSTA
                 self.set_tst_flags(self.reg.a.get());
             }
+            0x0a => {
+                // COMA
+                let new_a = !self.reg.a.get();
+                self.reg.a.set(new_a);
+                self.set_com_flags(new_a);
+            }
+            0x0b => {
+                // ASLA / LSLA
+                let (new_a, c, v) = shl(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_asl_flags(new_a, c, v);
+            }
+            0x0c => {
+                // LSRA
+                let (new_a, c, v) = shr(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_lsr_flags(new_a, c, v);
+            }
+            0x0d => {
+                // ROLA
+                let (new_a, c) = rotate_left(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_rol_flags(new_a, c);
+            }
+            0x0e => {
+                // RORA
+                let (new_a, c) = rotate_right(self.reg.a);
+                self.reg.a.set(new_a);
+                self.set_ror_flags(new_a, c);
+            }
+            0x0f => {
+                // ASRA
+                let (new_a, c) = shr_signed(self.reg.a.get());
+                self.reg.a.set(new_a);
+                self.set_asr_flags(new_a, c);
+            }
             0x10 => {
                 // PSHA
                 self.reg.sp.dec();
@@ -321,42 +357,6 @@ impl Program {
             0x1f => {
                 // TFR SP,Y
                 self.reg.y.set(self.reg.sp.get());
-            }
-            0x0a => {
-                // COMA
-                let new_a = !self.reg.a.get();
-                self.reg.a.set(new_a);
-                self.set_com_flags(new_a);
-            }
-            0x0b => {
-                // ASLA / LSLA
-                let (new_a, c, v) = shl(self.reg.a);
-                self.reg.a.set(new_a);
-                self.set_asl_flags(new_a, c, v);
-            }
-            0x0c => {
-                // LSRA
-                let (new_a, c, v) = shr(self.reg.a);
-                self.reg.a.set(new_a);
-                self.set_lsr_flags(new_a, c, v);
-            }
-            0x0d => {
-                // ROLA
-                let (new_a, c) = rotate_left(self.reg.a);
-                self.reg.a.set(new_a);
-                self.set_rol_flags(new_a, c);
-            }
-            0x0e => {
-                // RORA
-                let (new_a, c) = rotate_right(self.reg.a);
-                self.reg.a.set(new_a);
-                self.set_ror_flags(new_a, c);
-            }
-            0x0f => {
-                // ASRA
-                let (new_a, c) = shr_signed(self.reg.a.get());
-                self.reg.a.set(new_a);
-                self.set_asr_flags(new_a, c);
             }
             0x20 => {
                 // BSR Adr
@@ -1221,6 +1221,13 @@ impl Program {
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
+            0x96 => {
+                // ADDA #Data
+                let data = self.memory_at(self.reg.pc);
+                let (sum, c, v) = self.reg.a + data;
+                self.reg.a.set(sum);
+                self.set_add_flags(sum, c, v);
+            }
             0x97 => {
                 // CMPA #Data
                 let data = self.memory_at(self.reg.pc);
@@ -1232,13 +1239,6 @@ impl Program {
                 let data = self.memory_at(self.reg.pc);
                 let result = self.reg.a & data;
                 self.set_bita_flags(result);
-            }
-            0x96 => {
-                // ADDA #Data
-                let data = self.memory_at(self.reg.pc);
-                let (sum, c, v) = self.reg.a + data;
-                self.reg.a.set(sum);
-                self.set_add_flags(sum, c, v);
             }
             0x99 => {
                 // ANDA #Data
