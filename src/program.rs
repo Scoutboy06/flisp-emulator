@@ -462,6 +462,21 @@ impl Program {
                     self.reg.pc.set(new_pc);
                 }
             }
+            0x30 => {
+                // STX Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.memory[adr as usize].set(self.reg.x.get());
+            }
+            0x31 => {
+                // STY Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.memory[adr as usize].set(self.reg.y.get());
+            }
+            0x32 => {
+                // STSP Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.memory[adr as usize].set(self.reg.sp.get());
+            }
             0x33 => {
                 // JMP Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -545,6 +560,24 @@ impl Program {
                 let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
+            }
+            0x40 => {
+                // STX n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.memory[adr as usize].set(self.reg.x.get());
+            }
+            0x41 => {
+                // STY n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.memory[adr as usize].set(self.reg.y.get());
+            }
+            0x42 => {
+                // STSP n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.memory[adr as usize].set(self.reg.sp.get());
             }
             0x43 => {
                 // RTS
@@ -647,6 +680,24 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x50 => {
+                // STX n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.memory[adr as usize].set(self.reg.x.get());
+            }
+            0x51 => {
+                // STY n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.memory[adr as usize].set(self.reg.y.get());
+            }
+            0x52 => {
+                // STSP n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.memory[adr as usize].set(self.reg.sp.get());
+            }
             0x53 => {
                 // JMP n,X
                 let n = self.memory_at(self.reg.pc);
@@ -743,6 +794,22 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
             }
+            0x60 => {
+                // STX A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                self.memory[adr as usize].set(self.reg.x.get());
+            }
+            0x61 => {
+                // TODO: FLISP-hanbook said OP-code 60, but I assume it should be 61.
+                // STY A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                self.memory[adr as usize].set(self.reg.y.get());
+            }
+            0x62 => {
+                // STSP A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                self.memory[adr as usize].set(self.reg.sp.get());
+            }
             0x63 => {
                 // JMP A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
@@ -826,6 +893,24 @@ impl Program {
                 let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
+            }
+            0x70 => {
+                // STX n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.memory[adr as usize].set(self.reg.x.get());
+            }
+            0x71 => {
+                // STY n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.memory[adr as usize].set(self.reg.y.get());
+            }
+            0x72 => {
+                // STSP n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                self.memory[adr as usize].set(self.reg.sp.get());
             }
             0x73 => {
                 // JMP n,Y
@@ -922,6 +1007,21 @@ impl Program {
                 let (new_val, c) = shr_signed(self.memory_at(adr));
                 self.memory[adr as usize].set(new_val);
                 self.set_asr_flags(new_val, c);
+            }
+            0x80 => {
+                // STX A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                self.memory[adr as usize].set(self.reg.x.get());
+            }
+            0x81 => {
+                // STY A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                self.memory[adr as usize].set(self.reg.y.get());
+            }
+            0x82 => {
+                // STSP A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                self.memory[adr as usize].set(self.reg.sp.get());
             }
             0x83 => {
                 // JMP A,Y
@@ -1537,6 +1637,79 @@ impl Program {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
                 self.reg.sp.set(adr);
+            }
+            0xe1 => {
+                // STA Adr
+                let adr = self.memory_at(self.reg.pc);
+                self.memory[adr as usize].set(self.reg.a);
+            }
+            0xe2 => {
+                // STA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                self.memory[adr as usize].set(self.reg.a);
+            }
+            0xe3 => {
+                // STA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                self.memory[adr as usize].set(self.reg.a);
+            }
+            0xe4 => {
+                // STA A,X
+                let (sum, _, _) = self.reg.a + self.reg.x;
+                self.memory[sum as usize].set(self.reg.a);
+            }
+            0xe5 => {
+                // STA ,X+
+                self.memory[self.reg.x.get() as usize].set(self.reg.a);
+                self.reg.x.inc();
+            }
+            0xe6 => {
+                // STA ,X-
+                self.memory[self.reg.x.get() as usize].set(self.reg.a);
+                self.reg.x.dec();
+            }
+            0xe7 => {
+                // STA ,+X
+                self.reg.x.inc();
+                self.memory[self.reg.x.get() as usize].set(self.reg.a);
+            }
+            0xe8 => {
+                // STA ,-X
+                self.reg.x.dec();
+                self.memory[self.reg.x.get() as usize].set(self.reg.a);
+            }
+            0xe9 => {
+                // STA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (sum, _, _) = n + self.reg.y;
+                self.memory[sum as usize].set(self.reg.a);
+            }
+            0xea => {
+                // STA A,Y
+                let (sum, _, _) = self.reg.a + self.reg.y;
+                self.memory[sum as usize].set(self.reg.a);
+            }
+            0xeb => {
+                // STA ,Y+
+                self.memory[self.reg.y.get() as usize].set(self.reg.a);
+                self.reg.y.inc();
+            }
+            0xec => {
+                // STA ,Y-
+                self.memory[self.reg.y.get() as usize].set(self.reg.a);
+                self.reg.y.dec();
+            }
+            0xed => {
+                // STA ,+Y
+                self.reg.y.inc();
+                self.memory[self.reg.y.get() as usize].set(self.reg.a);
+            }
+            0xee => {
+                // STA ,-Y
+                self.reg.y.dec();
+                self.memory[self.reg.y.get() as usize].set(self.reg.a);
             }
             0xf0 => {
                 // LDA #Data
