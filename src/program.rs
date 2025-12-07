@@ -286,6 +286,38 @@ impl Program {
                 self.reg.cc.overwrite(val);
                 self.reg.sp.inc();
             }
+            0x18 => {
+                // TFR A,CC
+                self.reg.cc.overwrite(self.reg.a.get());
+            }
+            0x19 => {
+                // TFR CC,A
+                self.reg.a.set(self.reg.cc.data);
+            }
+            0x1a => {
+                // TFR X,Y
+                self.reg.y.set(self.reg.x.get());
+            }
+            0x1b => {
+                // TFR Y,X
+                self.reg.x.set(self.reg.y.get());
+            }
+            0x1c => {
+                // TFR X,SP
+                self.reg.sp.set(self.reg.x.get());
+            }
+            0x1d => {
+                // TFR SP,X
+                self.reg.x.set(self.reg.sp.get());
+            }
+            0x1e => {
+                // TFR Y,SP
+                self.reg.sp.set(self.reg.y.get());
+            }
+            0x1f => {
+                // TFR SP,Y
+                self.reg.y.set(self.reg.sp.get());
+            }
             0x0a => {
                 // COMA
                 let new_a = !self.reg.a.get();
