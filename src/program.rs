@@ -1132,6 +1132,13 @@ impl Program {
                 self.reg.a.set(diff);
                 self.set_sbc_flags(diff, c, v);
             }
+            0x94 => {
+                // SUBA #Data
+                let data = self.memory_at(self.reg.pc);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.reg.a.set(diff);
+                self.set_suba_flags(diff, c, v);
+            }
             0x95 => {
                 // ADCA #Data
                 let data = self.memory_at(self.reg.pc);
@@ -1228,6 +1235,14 @@ impl Program {
                 let (diff, c, v) = sub_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
                 self.reg.a.set(diff);
                 self.set_sbc_flags(diff, c, v);
+            }
+            0xa4 => {
+                // SUBA Adr
+                let adr = self.memory_at(self.reg.pc);
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.reg.a.set(diff);
+                self.set_suba_flags(diff, c, v);
             }
             0xa5 => {
                 // ADCA Adr
@@ -1338,6 +1353,15 @@ impl Program {
                 self.reg.a.set(diff);
                 self.set_sbc_flags(diff, c, v);
             }
+            0xb4 => {
+                // SUBA n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.reg.a.set(diff);
+                self.set_suba_flags(diff, c, v);
+            }
             0xb5 => {
                 // ADCA n,SP
                 let n = self.memory_at(self.reg.pc);
@@ -1445,6 +1469,15 @@ impl Program {
                 let (adr, _, _) = n + self.reg.x;
                 self.reg.sp.set(self.memory_at(adr));
                 self.set_ldsp_flags();
+            }
+            0xc4 => {
+                // SUBA n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.reg.a.set(diff);
+                self.set_suba_flags(diff, c, v);
             }
             0xc5 => {
                 // ADCA n,X
@@ -1559,6 +1592,15 @@ impl Program {
                 let (diff, c, v) = sub_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
                 self.reg.a.set(diff);
                 self.set_sbc_flags(diff, c, v);
+            }
+            0xd4 => {
+                // SUBA n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let data = self.memory_at(adr);
+                let (diff, c, v) = sub(self.reg.a, data);
+                self.reg.a.set(diff);
+                self.set_suba_flags(diff, c, v);
             }
             0xd5 => {
                 // ADCA n,Y
@@ -1820,6 +1862,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, result == 0);
         self.reg.cc.set(CCFlag::C, c);
         self.reg.cc.set(CCFlag::V, v);
+    }
+
+    fn set_suba_flags(&mut self, result: u8, c: bool, v: bool) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
+        self.reg.cc.set(CCFlag::V, v);
+        self.reg.cc.set(CCFlag::C, c);
     }
 
     fn set_lda_flags(&mut self) {
