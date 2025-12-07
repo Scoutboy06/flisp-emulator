@@ -242,6 +242,10 @@ impl Program {
                 let (_c, v) = self.reg.a.dec();
                 self.set_dec_flags(self.reg.a.get(), v);
             }
+            0x09 => {
+                // TSTA
+                self.set_tst_flags(self.reg.a.get());
+            }
             0x10 => {
                 // PSHA
                 self.reg.sp.dec();
@@ -551,6 +555,12 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_dec_flags(new_val, v);
             }
+            0x39 => {
+                // TST Adr
+                let adr = self.memory_at(self.reg.pc);
+                let val = self.memory_at(adr);
+                self.set_tst_flags(val);
+            }
             0x3a => {
                 // COM Adr
                 let adr = self.memory_at(self.reg.pc);
@@ -663,6 +673,13 @@ impl Program {
                 let (new_val, _c, v) = sub(val, 1);
                 self.memory[adr as usize].set(new_val);
                 self.set_dec_flags(new_val, v);
+            }
+            0x49 => {
+                // TST n,SP
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.sp;
+                let val = self.memory_at(adr);
+                self.set_tst_flags(val);
             }
             0x4a => {
                 // COM n,SP
@@ -778,6 +795,13 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_dec_flags(new_val, v);
             }
+            0x59 => {
+                // TST n,X
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.x;
+                let val = self.memory_at(adr);
+                self.set_tst_flags(val);
+            }
             0x5a => {
                 // COM n,X
                 let n = self.memory_at(self.reg.pc);
@@ -883,6 +907,12 @@ impl Program {
                 let (new_val, _c, v) = sub(val, 1);
                 self.memory[adr as usize].set(new_val);
                 self.set_dec_flags(new_val, v);
+            }
+            0x69 => {
+                // TST A,X
+                let (adr, _, _) = self.reg.a + self.reg.x;
+                let val = self.memory_at(adr);
+                self.set_tst_flags(val);
             }
             0x6a => {
                 // COM A,X
@@ -992,6 +1022,13 @@ impl Program {
                 self.memory[adr as usize].set(new_val);
                 self.set_dec_flags(new_val, v);
             }
+            0x79 => {
+                // TST n,Y
+                let n = self.memory_at(self.reg.pc);
+                let (adr, _, _) = n + self.reg.y;
+                let val = self.memory_at(adr);
+                self.set_tst_flags(val);
+            }
             0x7a => {
                 // COM n,Y
                 let n = self.memory_at(self.reg.pc);
@@ -1096,6 +1133,12 @@ impl Program {
                 let (new_val, _c, v) = sub(val, 1);
                 self.memory[adr as usize].set(new_val);
                 self.set_dec_flags(new_val, v);
+            }
+            0x89 => {
+                // TST A,Y
+                let (adr, _, _) = self.reg.a + self.reg.y;
+                let val = self.memory_at(adr);
+                self.set_tst_flags(val);
             }
             0x8a => {
                 // COM A,Y
@@ -2041,6 +2084,13 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, result == 0);
         self.reg.cc.set(CCFlag::C, c);
         self.reg.cc.set(CCFlag::V, v);
+    }
+
+    fn set_tst_flags(&mut self, result: u8) {
+        self.reg.cc.set(CCFlag::N, result.bit(7));
+        self.reg.cc.set(CCFlag::Z, result == 0);
+        self.reg.cc.disable(CCFlag::V);
+        self.reg.cc.disable(CCFlag::C);
     }
 
     fn todo(&mut self, instruction: u8) {
