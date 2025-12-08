@@ -7,11 +7,11 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::program::Program;
+use crate::emulator::Emulator;
 use crate::register::Register;
 
-pub fn memory_viz(
-    program: &Program,
+pub fn memory_view(
+    program: &Emulator,
     area: ratatui::prelude::Rect,
     buf: &mut ratatui::prelude::Buffer,
 ) {
@@ -29,7 +29,7 @@ pub fn memory_viz(
     render_ascii_area(program, ascii_area, buf);
 }
 
-fn render_adress_area(program: &Program, area: Rect, buf: &mut Buffer) {
+fn render_adress_area(program: &Emulator, area: Rect, buf: &mut Buffer) {
     let mut lines: Vec<Line> = Vec::with_capacity(32);
     for row in 0..32_u8 {
         let adr = row * 8;
@@ -49,7 +49,7 @@ fn render_adress_area(program: &Program, area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-fn render_memory_area(program: &Program, area: Rect, buf: &mut Buffer) {
+fn render_memory_area(program: &Emulator, area: Rect, buf: &mut Buffer) {
     let pc = program.reg_pc().get();
     let mut lines: Vec<Line> = Vec::with_capacity(32);
     for row in 0..32_u8 {
@@ -93,7 +93,7 @@ fn render_memory_area(program: &Program, area: Rect, buf: &mut Buffer) {
         .render(area, buf);
 }
 
-fn render_ascii_area(program: &Program, area: Rect, buf: &mut Buffer) {
+fn render_ascii_area(program: &Emulator, area: Rect, buf: &mut Buffer) {
     let pc = program.reg_pc().get();
     let mut lines: Vec<Line> = Vec::with_capacity(32);
     for row in 0..32_u8 {

@@ -70,7 +70,7 @@ enum QState {
     Execute,
 }
 
-pub struct Program {
+pub struct Emulator {
     source_memory: [Register; 256],
     memory: [Register; 256],
     debug_logs: VecDeque<String>,
@@ -80,7 +80,7 @@ pub struct Program {
     exit: bool,
 }
 
-impl Default for Program {
+impl Default for Emulator {
     fn default() -> Self {
         Self {
             source_memory: [Register::default(); 256],
@@ -94,7 +94,7 @@ impl Default for Program {
     }
 }
 
-impl Program {
+impl Emulator {
     pub fn load_memory(&mut self, data: &[u8; 256]) {
         for i in 0..256 {
             self.memory[i] = Register::new(data[i]);
@@ -159,7 +159,7 @@ impl Program {
         &self.debug_logs
     }
 
-    fn exit(&mut self) {
+    pub fn exit(&mut self) {
         self.exit = true;
     }
 
@@ -2099,10 +2099,6 @@ impl Program {
         self.reg.cc.set(CCFlag::Z, result == 0);
         self.reg.cc.disable(CCFlag::V);
         self.reg.cc.disable(CCFlag::C);
-    }
-
-    fn todo(&mut self, instruction: u8) {
-        self.debug_log(format!("Not yet implemented: {:02x}", instruction));
     }
 }
 

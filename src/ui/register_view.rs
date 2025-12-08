@@ -1,35 +1,37 @@
 use ratatui::{
-    buffer::Buffer,
-    layout::{Constraint, Layout, Rect},
-    prelude::Widget,
+    layout::{Constraint, Layout},
     symbols::{border, line},
     text::Line,
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::program::{CCFlag, Program};
+use crate::emulator::Emulator;
 
-pub fn flags_viz(program: &Program, area: Rect, buf: &mut Buffer) {
+pub fn register_view(
+    program: &Emulator,
+    area: ratatui::prelude::Rect,
+    buf: &mut ratatui::prelude::Buffer,
+) {
     const NUM_REGS: usize = 5;
 
     let area_wrapper = Layout::vertical([Constraint::Length(3)]).split(area)[0];
     let cols = Layout::horizontal([
-        Constraint::Length(4),
         Constraint::Length(5),
-        Constraint::Length(4),
-        Constraint::Length(4),
-        Constraint::Length(4),
+        Constraint::Length(6),
+        Constraint::Length(5),
+        Constraint::Length(5),
+        Constraint::Length(5),
     ])
     .split(area_wrapper);
 
-    let vals: [char; NUM_REGS] = [
-        dot(program.reg_cc().get(CCFlag::I)),
-        dot(program.reg_cc().get(CCFlag::N)),
-        dot(program.reg_cc().get(CCFlag::Z)),
-        dot(program.reg_cc().get(CCFlag::V)),
-        dot(program.reg_cc().get(CCFlag::C)),
+    let vals: [u8; NUM_REGS] = [
+        program.reg_a().get(),
+        program.reg_x().get(),
+        program.reg_y().get(),
+        program.reg_sp().get(),
+        program.reg_pc().get(),
     ];
-    let titles: [&'static str; NUM_REGS] = ["I", "N", "Z", "V", "C"];
+    let titles: [&'static str; NUM_REGS] = ["A", "X", "Y", "SP", "PC"];
 
     let middle_border_set = border::Set {
         top_left: line::ROUNDED.horizontal_down,
@@ -56,13 +58,9 @@ pub fn flags_viz(program: &Program, area: Rect, buf: &mut Buffer) {
     });
 
     for (i, block) in blocks.enumerate() {
-        Paragraph::new(vals[i].to_string())
+        Paragraph::new(format!("{:02x}", vals[i]))
             .centered()
             .block(block)
             .render(cols[i], buf);
     }
-}
-
-fn dot(b: bool) -> char {
-    if b { '●' } else { '○' }
 }

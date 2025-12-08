@@ -13,21 +13,22 @@ use ratatui::{
 use std::io;
 
 use crate::{
-    program::Program,
-    program_viz::{
-        clk_cycles_viz::clk_cycles_viz, debug_viz::debug_viz, flags_viz::flags_viz,
-        memory_viz::memory_viz, register_viz::register_viz,
+    emulator::Emulator,
+    event::handle_event,
+    ui::{
+        clock_cycles_view::clock_cycles_view, flags_view::flags_view, logs_view::logs_view,
+        memory_view::memory_view, register_view::register_view,
     },
 };
 
-pub struct ProgramVisualizer<'a> {
-    program: &'a mut Program,
+pub struct EmulatorVisualizer<'a> {
+    program: &'a mut Emulator,
     exit: bool,
     is_running: bool,
 }
 
-impl<'a> ProgramVisualizer<'a> {
-    pub fn viz(program: &'a mut Program) -> io::Result<()> {
+impl<'a> EmulatorVisualizer<'a> {
+    pub fn viz(program: &'a mut Emulator) -> io::Result<()> {
         let mut visualizer = Self {
             program,
             exit: false,
@@ -42,7 +43,7 @@ impl<'a> ProgramVisualizer<'a> {
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            self.handle_events()?;
+            handle_event(self.program, event::read()?);
         }
         Ok(())
     }
@@ -51,31 +52,12 @@ impl<'a> ProgramVisualizer<'a> {
         frame.render_widget(self, frame.area());
     }
 
-    fn handle_events(&mut self) -> io::Result<()> {
-        match event::read()? {
-            Event::Key(key_event) if key_event.kind == KeyEventKind::Press => {
-                self.handle_key_event(key_event)
-            }
-            _ => {}
-        }
-        Ok(())
-    }
-
-    fn handle_key_event(&mut self, key_event: KeyEvent) {
-        match key_event.code {
-            KeyCode::Char('q') => self.exit(),
-            KeyCode::Char('s') => self.program.step(),
-            KeyCode::Char('r') => self.program.reset(),
-            _ => {}
-        }
-    }
-
     fn exit(&mut self) {
         self.exit = true;
     }
 }
 
-impl<'a> Widget for &ProgramVisualizer<'a> {
+impl<'a> Widget for &EmulatorVisualizer<'a> {
     fn render(self, area: Rect, buf: &mut Buffer)
     where
         Self: Sized,
@@ -94,10 +76,10 @@ impl<'a> Widget for &ProgramVisualizer<'a> {
         ])
         .areas(col1);
 
-        memory_viz(self.program, col0, buf);
-        register_viz(self.program, col1, buf);
-        flags_viz(self.program, flags_area, buf);
-        clk_cycles_viz(self.program, clk_area, buf);
-        debug_viz(self.program, col2, buf);
+        memory_view(self.program, col0, buf);
+        register_view(self.program, col1, buf);
+        flags_view(self.program, flags_area, buf);
+        clock_cycles_view(self.program, clk_area, buf);
+        logs_view(self.program, col2, buf);
     }
 }

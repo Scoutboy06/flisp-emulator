@@ -8,9 +8,9 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::program::Program;
+use crate::emulator::Emulator;
 
-pub fn debug_viz(program: &Program, area: Rect, buf: &mut Buffer) -> io::Result<()> {
+pub fn logs_view(program: &Emulator, area: Rect, buf: &mut Buffer) -> io::Result<()> {
     let lines: Vec<Line> = program
         .get_debug_logs()
         .iter()
