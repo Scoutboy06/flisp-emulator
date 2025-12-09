@@ -1,5 +1,8 @@
 use std::collections::VecDeque;
 
+mod math_utils;
+pub mod register;
+
 use crate::math_utils::{
     GetBit, add, add_c, rotate_left, rotate_right, shl, shr, shr_signed, sub, sub_c,
 };
@@ -30,7 +33,7 @@ impl CCFlags {
 
     pub fn set(&mut self, flag: CCFlag, value: bool) {
         if value {
-            self.data |= (flag as u8)
+            self.data |= flag as u8
         } else {
             self.data &= !(flag as u8)
         }
@@ -2107,8 +2110,6 @@ fn get_instruction_size_and_time(instruction: u8) -> (u8, u8) {
         0x00 => (1, 2),
         0x01 => (2, 4),
         0x02 => (2, 4),
-        0x03 => (0, 0),
-        0x04 => (0, 0),
         0x05 => (1, 3),
         0x06 => (1, 3),
         0x07 => (1, 3),
@@ -2327,8 +2328,6 @@ fn get_instruction_size_and_time(instruction: u8) -> (u8, u8) {
         0xdc => (2, 4),
         0xdd => (2, 4),
         0xde => (2, 4),
-        0xdf => (0, 0),
-        0xe0 => (0, 0),
         0xe1 => (2, 3),
         0xe2 => (2, 3),
         0xe3 => (2, 3),
@@ -2343,7 +2342,6 @@ fn get_instruction_size_and_time(instruction: u8) -> (u8, u8) {
         0xec => (1, 4),
         0xed => (1, 4),
         0xee => (1, 4),
-        0xef => (0, 0),
         0xf0 => (2, 2),
         0xf1 => (2, 3),
         0xf2 => (2, 3),
@@ -2359,6 +2357,5 @@ fn get_instruction_size_and_time(instruction: u8) -> (u8, u8) {
         0xfc => (1, 4),
         0xfd => (1, 4),
         0xfe => (1, 4),
-        0xff => (0, 0),
     }
 }

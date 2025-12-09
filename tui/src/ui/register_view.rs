@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::emulator::Emulator;
+use emulator::Emulator;
 
 pub fn register_view(
     program: &Emulator,

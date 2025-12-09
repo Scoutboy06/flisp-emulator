@@ -4,7 +4,7 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::emulator::Emulator;
+use emulator::Emulator;
 
 pub fn clock_cycles_view(program: &Emulator, area: Rect, buf: &mut Buffer) {
     let clk_cycles = program.clk_count();

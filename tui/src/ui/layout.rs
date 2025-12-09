@@ -12,8 +12,9 @@ use ratatui::{
 };
 use std::io;
 
+use emulator::Emulator;
+
 use crate::{
-    emulator::Emulator,
     event::handle_event,
     ui::{
         clock_cycles_view::clock_cycles_view, flags_view::flags_view, logs_view::logs_view,

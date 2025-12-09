@@ -1,6 +1,6 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 
-use crate::{emulator::Emulator, ui::EmulatorVisualizer};
+use crate::ui::EmulatorVisualizer;
 
 pub fn handle_event(ui: &mut EmulatorVisualizer, event: Event) {
     match event {

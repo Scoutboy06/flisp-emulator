@@ -7,7 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
 };
 
-use crate::emulator::{CCFlag, Emulator};
+use emulator::{CCFlag, Emulator};
 
 pub fn flags_view(program: &Emulator, area: Rect, buf: &mut Buffer) {
     const NUM_REGS: usize = 5;

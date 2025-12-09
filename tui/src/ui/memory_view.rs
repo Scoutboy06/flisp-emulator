@@ -7,8 +7,8 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
-use crate::emulator::Emulator;
-use crate::register::Register;
+use emulator::Emulator;
+use emulator::register::Register;
 
 pub fn memory_view(
     program: &Emulator,

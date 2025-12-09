@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Paragraph, Widget},
 };
 
-use crate::emulator::Emulator;
+use emulator::Emulator;
 
 pub fn logs_view(program: &Emulator, area: Rect, buf: &mut Buffer) -> io::Result<()> {
     let lines: Vec<Line> = program
