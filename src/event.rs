@@ -1,26 +1,26 @@
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
 
-use crate::emulator::Emulator;
+use crate::{emulator::Emulator, ui::EmulatorVisualizer};
 
-pub fn handle_event(program: &mut Emulator, event: Event) {
+pub fn handle_event(ui: &mut EmulatorVisualizer, event: Event) {
     match event {
-        Event::Key(key_event) => handle_key_event(program, key_event),
+        Event::Key(key_event) => handle_key_event(ui, key_event),
         _ => {}
     }
 }
 
-fn handle_key_event(program: &mut Emulator, key_event: KeyEvent) {
+fn handle_key_event(ui: &mut EmulatorVisualizer, key_event: KeyEvent) {
     match key_event.kind {
-        KeyEventKind::Press => handle_key_press(program, key_event.code),
+        KeyEventKind::Press => handle_key_press(ui, key_event.code),
         _ => {}
     }
 }
 
-fn handle_key_press(program: &mut Emulator, key_code: KeyCode) {
+fn handle_key_press(ui: &mut EmulatorVisualizer, key_code: KeyCode) {
     match key_code {
-        KeyCode::Char('q') => program.exit(),
-        KeyCode::Char('s') => program.step(),
-        KeyCode::Char('r') => program.reset(),
+        KeyCode::Char('q') => ui.exit(),
+        KeyCode::Char('s') => ui.program.step(),
+        KeyCode::Char('r') => ui.program.reset(),
         _ => {}
     }
 }

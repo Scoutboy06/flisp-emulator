@@ -2,6 +2,7 @@
 
 mod emulator;
 mod event;
+mod math_utils;
 mod register;
 mod state;
 mod ui;

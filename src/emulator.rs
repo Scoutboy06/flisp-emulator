@@ -1,8 +1,9 @@
 use std::collections::VecDeque;
 
-use crate::register::{
-    GetBit, Register, add, rotate_left, rotate_right, shl, shr, shr_signed, sub, sub_c,
+use crate::math_utils::{
+    GetBit, add, add_c, rotate_left, rotate_right, shl, shr, shr_signed, sub, sub_c,
 };
+use crate::register::Register;
 
 #[repr(u8)]
 pub enum CCFlag {
@@ -70,6 +71,13 @@ enum QState {
     Execute,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[repr(u8)]
+enum RunState {
+    Running,
+    Paused,
+}
+
 pub struct Emulator {
     source_memory: [Register; 256],
     memory: [Register; 256],
@@ -77,7 +85,7 @@ pub struct Emulator {
     reg: RegisterStore,
     q_state: QState,
     clk_count: u32,
-    exit: bool,
+    run_state: RunState,
 }
 
 impl Default for Emulator {
@@ -89,7 +97,7 @@ impl Default for Emulator {
             reg: RegisterStore::default(),
             q_state: QState::Reset,
             clk_count: 0,
-            exit: false,
+            run_state: RunState::Paused,
         }
     }
 }
@@ -142,12 +150,6 @@ impl Emulator {
         self.clk_count
     }
 
-    pub fn execute(&mut self) {
-        while !self.exit {
-            self.step();
-        }
-    }
-
     pub fn debug_log(&mut self, msg: String) {
         if self.debug_logs.len() >= 20 {
             self.debug_logs.pop_front();
@@ -157,10 +159,6 @@ impl Emulator {
 
     pub fn get_debug_logs(&self) -> &VecDeque<String> {
         &self.debug_logs
-    }
-
-    pub fn exit(&mut self) {
-        self.exit = true;
     }
 
     pub fn reset(&mut self) {
@@ -543,7 +541,7 @@ impl Emulator {
                 // INC Adr
                 let adr = self.memory_at(self.reg.pc);
                 let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
+                let (new_val, _c, v) = add_c(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
             }
@@ -661,7 +659,7 @@ impl Emulator {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.sp;
                 let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
+                let (new_val, _c, v) = add_c(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
             }
@@ -782,7 +780,7 @@ impl Emulator {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.x;
                 let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
+                let (new_val, _c, v) = add_c(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
             }
@@ -882,7 +880,7 @@ impl Emulator {
                 // INC A,X
                 let (adr, _, _) = self.reg.a + self.reg.x;
                 let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
+                let (new_val, _c, v) = add_c(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
             }
@@ -1009,7 +1007,7 @@ impl Emulator {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
                 let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
+                let (new_val, _c, v) = add_c(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
             }
@@ -1122,7 +1120,7 @@ impl Emulator {
                 // INC A,Y
                 let (adr, _, _) = self.reg.a + self.reg.y;
                 let val = self.memory_at(adr);
-                let (new_val, _c, v) = add(val, 1, false);
+                let (new_val, _c, v) = add_c(val, 1, false);
                 self.memory[adr as usize].set(new_val);
                 self.set_inc_flags(new_val, v);
             }
@@ -1217,7 +1215,7 @@ impl Emulator {
             0x95 => {
                 // ADCA #Data
                 let data = self.memory_at(self.reg.pc);
-                let (sum, c, v) = self.reg.a.add_c(data);
+                let (sum, c, v) = add(self.reg.a, data);
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
@@ -1323,7 +1321,7 @@ impl Emulator {
                 // ADCA Adr
                 let adr = self.memory_at(self.reg.pc);
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.add_c(data);
+                let (sum, c, v) = add_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
@@ -1442,7 +1440,7 @@ impl Emulator {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.sp;
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.add_c(data);
+                let (sum, c, v) = add_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
@@ -1568,7 +1566,7 @@ impl Emulator {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.x;
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.add_c(data);
+                let (sum, c, v) = add_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }
@@ -1691,7 +1689,7 @@ impl Emulator {
                 let n = self.memory_at(self.reg.pc);
                 let (adr, _, _) = n + self.reg.y;
                 let data = self.memory_at(adr);
-                let (sum, c, v) = self.reg.a.add_c(data);
+                let (sum, c, v) = add_c(self.reg.a, data, self.reg.cc.get(CCFlag::C));
                 self.reg.a.set(sum);
                 self.set_add_flags(sum, c, v);
             }

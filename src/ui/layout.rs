@@ -22,7 +22,7 @@ use crate::{
 };
 
 pub struct EmulatorVisualizer<'a> {
-    program: &'a mut Emulator,
+    pub program: &'a mut Emulator,
     exit: bool,
     is_running: bool,
 }
@@ -43,7 +43,7 @@ impl<'a> EmulatorVisualizer<'a> {
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while !self.exit {
             terminal.draw(|frame| self.draw(frame))?;
-            handle_event(self.program, event::read()?);
+            handle_event(self, event::read()?);
         }
         Ok(())
     }
@@ -52,7 +52,7 @@ impl<'a> EmulatorVisualizer<'a> {
         frame.render_widget(self, frame.area());
     }
 
-    fn exit(&mut self) {
+    pub fn exit(&mut self) {
         self.exit = true;
     }
 }
