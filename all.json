@@ -897,7 +897,7 @@
   },
   "c5": {
     "hex": "c5",
-    "clk": "x",
+    "clk": 5,
     "name": "ADCA",
     "bytes": 2,
     "mode": "nx"

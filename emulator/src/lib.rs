@@ -74,13 +74,6 @@ enum QState {
     Execute,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[repr(u8)]
-enum RunState {
-    Running,
-    Paused,
-}
-
 pub struct Emulator {
     source_memory: [Register; 256],
     memory: [Register; 256],
@@ -88,7 +81,6 @@ pub struct Emulator {
     reg: RegisterStore,
     q_state: QState,
     clk_count: u32,
-    run_state: RunState,
 }
 
 impl Default for Emulator {
@@ -100,7 +92,6 @@ impl Default for Emulator {
             reg: RegisterStore::default(),
             q_state: QState::Reset,
             clk_count: 0,
-            run_state: RunState::Paused,
         }
     }
 }
@@ -2302,7 +2293,7 @@ fn get_instruction_size_and_time(instruction: u8) -> (u8, u8) {
         0xc2 => (2, 3),
         0xc3 => (2, 5),
         0xc4 => (2, 5),
-        0xc5 => (2, todo!("Instruction 0xC5")),
+        0xc5 => (2, 5),
         0xc6 => (2, 5),
         0xc7 => (2, 4),
         0xc8 => (2, 4),

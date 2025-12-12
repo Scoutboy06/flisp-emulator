@@ -3,12 +3,11 @@ use ratatui::{
     layout::{Constraint, Layout, Rect},
     style::{Color, Stylize},
     symbols::{border, line},
-    text::{Line, Span, Text},
+    text::{Line, Span},
     widgets::{Block, Borders, Paragraph, Widget},
 };
 
 use emulator::Emulator;
-use emulator::register::Register;
 
 pub fn memory_view(
     program: &Emulator,
@@ -29,7 +28,7 @@ pub fn memory_view(
     render_ascii_area(program, ascii_area, buf);
 }
 
-fn render_adress_area(program: &Emulator, area: Rect, buf: &mut Buffer) {
+fn render_adress_area(_program: &Emulator, area: Rect, buf: &mut Buffer) {
     let mut lines: Vec<Line> = Vec::with_capacity(32);
     for row in 0..32_u8 {
         let adr = row * 8;

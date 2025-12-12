@@ -1,8 +1,14 @@
-use std::{fs::File, io::Write};
+#![allow(unused)]
+use std::{fs::File, path::PathBuf};
 
-use clap::{CommandFactory, Parser, Subcommand};
+use assembler::run_assemble;
+use clap::{CommandFactory, Parser, Subcommand, builder::OsStr};
 use emulator::Emulator;
 use tui::ui::EmulatorVisualizer;
+
+use crate::fmem::parse_fmem;
+
+mod fmem;
 
 /*
 CLI usage:
@@ -14,7 +20,7 @@ CLI usage:
 #[command(name = "Flisp Emulator", version, about = "Unified tool for the Flisp Emulator", long_about = None)]
 struct Cli {
     #[arg(global = true)]
-    fmem_file: Option<String>,
+    fmem_file: Option<PathBuf>,
 
     #[command(subcommand)]
     command: Option<Commands>,
@@ -25,19 +31,17 @@ enum Commands {
     #[command(about = "Assemble an assembly file into a .fmem file")]
     Assemble {
         #[arg(short, long, default_value = "output.fmem")]
-        output: String,
-        input: String,
+        output: PathBuf,
+        input: PathBuf,
     },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
-    dbg!(&args);
 
     match args.command {
         Some(Commands::Assemble { input, output }) => {
-            // run_assemble(input, output)?;
-            todo!();
+            run_assemble(input, output)?;
         }
         None => {
             if let Some(fmem) = args.fmem_file {
@@ -52,13 +56,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-fn run_visualize(fmem: String) {
-    let mut program = Emulator::default();
-    let mut file = File::open(fmem).expect("Failed to open fmem file");
-    todo!();
-    // program
-    //     .load_memory_from_file(&mut file)
-    //     .expect("Failed to load fmem file into memory");
+fn run_visualize(input: PathBuf) {
+    let mut _file = File::open(input.clone()).expect("Failed to open file");
 
-    // EmulatorVisualizer::viz(&mut program).unwrap();
+    if input.extension() != Some(&OsStr::from("fmem")) {
+        panic!("Invalid file type");
+    }
+
+    let fmem = match parse_fmem(input) {
+        Ok(fmem) => fmem,
+        Err(e) => {
+            e.report();
+            std::process::exit(1);
+        }
+    };
+
+    let mut program = Emulator::default();
+    program.load_memory(&fmem);
+    EmulatorVisualizer::viz(&mut program).unwrap()
 }

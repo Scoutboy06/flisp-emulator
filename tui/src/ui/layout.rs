@@ -1,14 +1,9 @@
-use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event;
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Layout},
     prelude::{Buffer, Rect},
-    symbols::{
-        border::{self},
-        line,
-    },
-    text::Line,
-    widgets::{Block, Borders, Paragraph, Widget},
+    widgets::Widget,
 };
 use std::io;
 
@@ -25,7 +20,6 @@ use crate::{
 pub struct EmulatorVisualizer<'a> {
     pub program: &'a mut Emulator,
     exit: bool,
-    is_running: bool,
 }
 
 impl<'a> EmulatorVisualizer<'a> {
@@ -33,7 +27,6 @@ impl<'a> EmulatorVisualizer<'a> {
         let mut visualizer = Self {
             program,
             exit: false,
-            is_running: false,
         };
         let mut terminal = ratatui::init();
         let result = visualizer.run(&mut terminal);
@@ -78,7 +71,7 @@ impl<'a> Widget for &EmulatorVisualizer<'a> {
         .areas(col1);
 
         memory_view(self.program, col0, buf);
-        register_view(self.program, col1, buf);
+        register_view(self.program, registers_area, buf);
         flags_view(self.program, flags_area, buf);
         clock_cycles_view(self.program, clk_area, buf);
         logs_view(self.program, col2, buf);
