@@ -100,18 +100,11 @@ impl<'a> Lexer<'a> {
         let start = self.pos;
 
         let (token_kind, token_value) = match self.curr.unwrap() {
-            b'#' => todo!(),
-            b'0'..=b'9' | b'a'..=b'f' | b'A'..=b'F' | b'$' | b'%' => {
-                (TK::NumberLiteral, TV::NumberLiteral(self.parse_number()))
+            b'#' => {
+                self.advance();
+                (TK::ImmediatePrefix, TV::Empty)
             }
-            b';' => {
-                while self.curr != Some(b'\n') {
-                    self.advance();
-                }
-                self.advance(); // Skip \n
-                (TK::Comment, TV::Empty)
-            }
-            b'A'..=b'Z' => {
+            b'A'..=b'Z' | b'a'..=b'z' => {
                 let id = self.collect_identifier();
                 if let Some(instr) = parse_instruction(&id) {
                     (TK::Instruction, TV::Instruction(instr))
@@ -122,6 +115,20 @@ impl<'a> Lexer<'a> {
                 } else {
                     (TK::Sym, TV::Sym(Symbol(id)))
                 }
+            }
+            b'0'..=b'9' | b'$' | b'%' => {
+                (TK::NumberLiteral, TV::NumberLiteral(self.parse_number()))
+            }
+            b';' => {
+                while self.curr != Some(b'\n') {
+                    self.advance();
+                }
+                self.advance(); // Skip \n
+                (TK::Comment, TV::Empty)
+            }
+            b':' => {
+                self.advance();
+                (TK::Colon, TV::Empty)
             }
             _ => todo!(),
         };
@@ -176,9 +183,9 @@ impl<'a> Lexer<'a> {
     fn collect_identifier(&mut self) -> String {
         let mut id = String::new();
 
-        loop {
-            match self.curr {
-                Some(b'A'..=b'Z' | b'a'..=b'z') => id.push(self.curr.unwrap() as char),
+        while let Some(b) = self.curr {
+            match b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'_' => id.push(self.curr.unwrap() as char),
                 _ => break,
             }
 

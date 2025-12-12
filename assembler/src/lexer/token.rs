@@ -32,6 +32,8 @@ pub enum TokenKind {
     Instruction,
     NamedLiteral,
     NumberLiteral,
+    ImmediatePrefix,
+    Colon,
     Comment,
 }
 
