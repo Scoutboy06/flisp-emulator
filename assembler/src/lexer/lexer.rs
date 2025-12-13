@@ -9,7 +9,6 @@ use crate::lexer::{
 };
 
 pub struct Lexer<'a> {
-    source: &'a str,
     bytes: Bytes<'a>,
     pos: usize,
     curr: Option<u8>,
@@ -23,7 +22,6 @@ impl<'a> Lexer<'a> {
         let curr = bytes.next();
 
         Self {
-            source,
             bytes,
             pos: 0,
             curr,
@@ -38,33 +36,6 @@ impl<'a> Lexer<'a> {
         } else {
             self.lex_next_token()
         }
-    }
-
-    pub fn peek_token(&mut self) -> &Token {
-        if self.token_queue.is_empty() {
-            let token = self.lex_next_token();
-            self.token_queue.push_back(token);
-        }
-        self.token_queue.front().unwrap()
-    }
-
-    pub fn peek_token_at(&mut self, offset: usize) -> &Token {
-        while self.token_queue.len() <= offset {
-            let token = self.lex_next_token();
-            self.token_queue.push_back(token);
-        }
-        self.token_queue.get(offset).unwrap()
-    }
-
-    fn peek(&mut self, offset: usize) -> Option<u8> {
-        while self.byte_queue.len() <= offset {
-            if let Some(b) = self.bytes.next() {
-                self.byte_queue.push_back(b);
-            } else {
-                return None;
-            }
-        }
-        self.byte_queue.get(offset).cloned()
     }
 
     fn advance(&mut self) {
@@ -140,8 +111,7 @@ impl<'a> Lexer<'a> {
         Token {
             kind: token_kind,
             value: token_value,
-            start,
-            end: self.pos,
+            span: start..self.pos,
         }
     }
 

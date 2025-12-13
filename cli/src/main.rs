@@ -1,4 +1,3 @@
-#![allow(unused)]
 use std::{fs::File, path::PathBuf};
 
 use assembler::run_assemble;

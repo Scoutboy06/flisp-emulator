@@ -1,4 +1,4 @@
-#![allow(unused)]
+use std::ops::Range;
 
 use crate::lexer::{
     directive::Directive, instruction::Instruction, named_literal::NamedLiteral, symbol::Symbol,
@@ -8,8 +8,7 @@ use crate::lexer::{
 pub struct Token {
     pub kind: TokenKind,
     pub value: TokenValue,
-    pub start: usize,
-    pub end: usize,
+    pub span: Range<usize>,
 }
 
 impl Token {
@@ -17,8 +16,7 @@ impl Token {
         Self {
             kind: TokenKind::Eof,
             value: TokenValue::Empty,
-            start: pos,
-            end: pos,
+            span: pos..pos,
         }
     }
 }

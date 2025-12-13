@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use phf::phf_map;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -8,6 +6,7 @@ pub enum NamedLiteral {
     X,
     A,
     Y,
+    CC,
     XPlus,
     XMinus,
     PlusX,
@@ -23,6 +22,7 @@ static NAMED_LITERAL: phf::Map<&'static str, NamedLiteral> = phf_map! {
     "X" => NamedLiteral::X,
     "A" => NamedLiteral::A,
     "Y" => NamedLiteral::Y,
+    "CC" => NamedLiteral::CC,
     "X+" => NamedLiteral::XPlus,
     "X-" => NamedLiteral::XMinus,
     "+X" => NamedLiteral::PlusX,

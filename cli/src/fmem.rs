@@ -1,5 +1,5 @@
 use ariadne::{Label, Report, ReportKind, Source};
-use std::{io, ops::Range, path::PathBuf};
+use std::{ops::Range, path::PathBuf};
 
 #[derive(Debug)]
 pub struct ParseError {

@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use phf::phf_map;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
