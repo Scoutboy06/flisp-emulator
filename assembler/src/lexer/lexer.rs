@@ -1,6 +1,4 @@
-#![allow(unused)]
-
-use std::{borrow::Cow, collections::VecDeque, str::Bytes};
+use std::{collections::VecDeque, str::Bytes};
 
 use crate::lexer::{
     directive::parse_directive,
@@ -18,8 +16,6 @@ pub struct Lexer<'a> {
     byte_queue: VecDeque<u8>,
     token_queue: VecDeque<Token>,
 }
-
-type LexResult<T> = Result<T, ()>;
 
 impl<'a> Lexer<'a> {
     pub fn new(source: &'a str) -> Self {
@@ -75,7 +71,7 @@ impl<'a> Lexer<'a> {
         if self.curr.is_some() {
             self.pos += 1;
         }
-        if self.byte_queue.len() > 0 {
+        if !self.byte_queue.is_empty() {
             self.curr = self.byte_queue.pop_front();
         } else {
             self.curr = self.bytes.next();
@@ -130,6 +126,10 @@ impl<'a> Lexer<'a> {
                 self.advance();
                 (TK::Colon, TV::Empty)
             }
+            b',' => {
+                self.advance();
+                (TK::Comma, TV::Empty)
+            }
             _ => todo!(),
         };
 
@@ -169,7 +169,7 @@ impl<'a> Lexer<'a> {
                 _ => break,
             };
 
-            if u8::MAX / mult - nxt < sum {
+            if sum > (u8::MAX - nxt) / mult {
                 break;
             }
             sum = sum * mult + nxt;
