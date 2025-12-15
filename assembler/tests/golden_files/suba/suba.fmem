@@ -34,5 +34,5 @@ File: suba.fmem
  #setMemory  3B=0A
  #setMemory  3C=D4
  #setMemory  3D=0A
- #setMemory  1E=D4
- #setMemory  1F=0A
+ #setMemory  3E=D4
+ #setMemory  3F=0A

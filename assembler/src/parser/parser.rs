@@ -1,43 +1,69 @@
-use std::{collections::HashMap, ops::Range};
+use std::ops::Range;
+
+use ariadne::{Label, Report, ReportKind, Source};
 
 use crate::lexer::{
     Lexer, NamedLiteral,
+    directive::Directive,
     instruction::Instruction,
     token::{Token, TokenKind},
 };
 
-pub struct Parser<'a> {
-    lexer: Lexer<'a>,
-    curr_tok: Token,
-    prev_tok: Token,
+#[derive(Debug)]
+pub struct ProgramAST {
+    pub lines: Vec<AsmLine>,
 }
 
-#[derive(Debug, Clone)]
-pub struct ProgramAST {
-    instructions: Vec<AsmInstruction>,
-    symbols: HashMap<String, usize>,
+#[derive(Debug)]
+pub enum AsmLine {
+    Instruction(AsmInstruction),
+    Directive(AsmDirective),
+    Symbol(AsmSymbol),
 }
 
 #[derive(Debug, Clone)]
 pub struct AsmInstruction {
-    opcode: u8,
-    operands: Vec<Operand>,
+    pub span: Range<usize>,
+    pub opcode: u8,
+    pub operands: Vec<Operand>,
+}
+
+impl AsmInstruction {
+    /// The size of an instruction in bytes (1 byte for opcode + operands)
+    ///
+    /// The maximum size is 3 bytes (1 byte opcode + 2 bytes operands)
+    pub fn size(&self) -> u8 {
+        1 + self.operands.len() as u8
+    }
+}
+
+#[derive(Debug)]
+pub struct AsmDirective {
+    pub span: Range<usize>,
+    pub name: Directive,
+    pub args: Vec<Atom>,
+}
+
+#[derive(Debug)]
+pub struct AsmSymbol {
+    pub span: Range<usize>,
+    pub name: String,
 }
 
 #[derive(Debug, Clone)]
 enum OperandForm {
     None,
 
-    // Just one operand: `n`, `X`, label, etc.
+    /// Just one operand: `n`, `X`, label, etc.
     One(Atom),
 
-    // Something like `n,X` or `label,Y`
+    /// Something like `n,X` or `label,Y`
     Two(Atom, Atom),
 
-    // Immediate: `#5` or `#label`
+    /// Immediate: `#5` or `#label`
     Imm1(Atom),
 
-    // Immediate with two operands: `#5,X` or `#label,Y`
+    /// Immediate with two operands: `#5,X` or `#label,Y`
     Imm2(Atom, Atom),
 }
 
@@ -58,40 +84,66 @@ pub enum Operand {
     Reg(NamedLiteral), // X, Y, SP, etc.
 }
 
-fn op0(opcode: u8) -> AsmInstruction {
-    AsmInstruction {
-        opcode,
-        operands: Vec::new(),
-    }
+fn op0(opcode: u8) -> (u8, Vec<Operand>) {
+    (opcode, Vec::new())
 }
 
-fn op1(opcode: u8, a: Operand) -> AsmInstruction {
-    AsmInstruction {
-        opcode,
-        operands: vec![a],
-    }
+fn op1(opcode: u8, a: Operand) -> (u8, Vec<Operand>) {
+    (opcode, vec![a])
 }
 
-fn op2(opcode: u8, a: Operand, b: Operand) -> AsmInstruction {
-    AsmInstruction {
-        opcode,
-        operands: vec![a, b],
-    }
+fn op2(opcode: u8, a: Operand, b: Operand) -> (u8, Vec<Operand>) {
+    (opcode, vec![a, b])
 }
 
 #[derive(Debug)]
 pub struct ParseError {
-    message: String,
-    span: Range<usize>,
+    pub msg: String,
+    pub span: Range<usize>,
+}
+
+impl ParseError {
+    pub fn new(msg: impl Into<String>, span: Range<usize>) -> Self {
+        Self {
+            msg: msg.into(),
+            span,
+        }
+    }
+
+    pub fn report_on(&self, file_name: &str, src: &str) {
+        self.build_report(file_name)
+            .eprint((file_name, Source::from(src)))
+            .unwrap();
+    }
+
+    pub fn build_report<'a>(&'a self, file_name: &'a str) -> Report<'a, (&'a str, Range<usize>)> {
+        Report::build(ReportKind::Error, (file_name, self.span.to_owned()))
+            .with_message(&self.msg)
+            .with_label(Label::new((file_name, self.span.to_owned())).with_message("here"))
+            .finish()
+    }
+}
+
+pub struct Parser<'a> {
+    lexer: Lexer<'a>,
+    curr_tok: Token,
+    prev_tok: Token,
+    source_name: Option<String>,
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(source: &'a str) -> Self {
-        Parser {
+    pub fn from_source(source: &'a str) -> Self {
+        Self {
             lexer: Lexer::new(source),
             curr_tok: Token::default(),
             prev_tok: Token::default(),
+            source_name: None,
         }
+    }
+
+    pub fn with_source_name(mut self, name: String) -> Self {
+        self.source_name = Some(name);
+        self
     }
 
     fn advance(&mut self) {
@@ -111,12 +163,15 @@ impl<'a> Parser<'a> {
         self.curr_tok.span.to_owned()
     }
 
+    fn err(&self, msg: String, span: Range<usize>) -> ParseError {
+        ParseError { msg, span }
+    }
+
     pub fn parse(&mut self) -> Result<ProgramAST, ParseError> {
         // Initialize the first token
         self.advance();
 
-        let mut instructions: Vec<AsmInstruction> = Vec::new();
-        let symbols: HashMap<String, usize> = HashMap::new();
+        let mut lines: Vec<AsmLine> = Vec::new();
 
         use TokenKind as TK;
         // use TokenValue as TV;
@@ -124,28 +179,52 @@ impl<'a> Parser<'a> {
             match self.curr().kind {
                 TK::Instruction => {
                     let ins = self.parse_instruction()?;
-                    instructions.push(ins);
+                    lines.push(AsmLine::Instruction(ins));
                 }
                 TK::Sym => todo!(),
-                TK::Directive => todo!(),
+                TK::Directive => {
+                    let dir = self.parse_directive()?;
+                    lines.push(AsmLine::Directive(dir));
+                }
                 _ => todo!("{:?}", self.curr()),
             };
         }
 
-        Ok(ProgramAST {
-            instructions,
-            symbols,
-        })
+        Ok(ProgramAST { lines })
+    }
+
+    fn parse_directive(&mut self) -> Result<AsmDirective, ParseError> {
+        let start_pos = self.curr().span.start;
+        match self.curr().value.expect_directive() {
+            Directive::Org => {
+                self.advance();
+                let span = start_pos..self.curr().span.end;
+                match self.curr().kind {
+                    TokenKind::NumberLiteral | TokenKind::Sym => Ok(AsmDirective {
+                        span,
+                        name: Directive::Org,
+                        args: vec![self.parse_atom().unwrap()],
+                    }),
+                    _ => Err(self.err("Expected number or symbol".into(), span)),
+                }
+            }
+            Directive::Equ => todo!(),
+            Directive::Fcb => todo!(),
+            Directive::Fcs => todo!(),
+            Directive::Rmb => todo!(),
+        }
     }
 
     fn parse_instruction(&mut self) -> Result<AsmInstruction, ParseError> {
+        let start = self.curr().span.start;
         let ins = self.curr().value.expect_instruction();
         self.advance(); // Consume instruction token
         let ops = self.parse_operands()?;
+        let end = self.prev().span.end;
 
         use Instruction as I;
         use OperandForm as OF;
-        match (ins, ops) {
+        let res = match (ins, ops) {
             (I::NOP, OF::None) => Ok(op0(0x00)),
             (I::ANDCC, OF::Imm1(Atom::Number(n))) => Ok(op1(0x01, Operand::Imm(n))),
             (I::ORCC, OF::Imm1(Atom::Number(n))) => Ok(op1(0x02, Operand::Imm(n))),
@@ -686,11 +765,17 @@ impl<'a> Parser<'a> {
             (I::LDA, OF::Two(Atom::None, Atom::Reg(NamedLiteral::YMinus))) => Ok(op0(0xfc)),
             (I::LDA, OF::Two(Atom::None, Atom::Reg(NamedLiteral::PlusY))) => Ok(op0(0xfd)),
             (I::LDA, OF::Two(Atom::None, Atom::Reg(NamedLiteral::MinusY))) => Ok(op0(0xfe)),
-            _ => Err(ParseError {
-                message: "Invalid operand form for instruction".to_owned(),
-                span: self.prev().span.start..self.curr().span.end,
-            }),
-        }
+            _ => Err(self.err(
+                "Invalid operand form for instruction".to_owned(),
+                self.prev().span.start..self.curr().span.end,
+            )),
+        }?;
+
+        Ok(AsmInstruction {
+            opcode: res.0,
+            operands: res.1,
+            span: start..end,
+        })
     }
 
     fn parse_operands(&mut self) -> Result<OperandForm, ParseError> {
@@ -699,22 +784,22 @@ impl<'a> Parser<'a> {
         match self.curr().kind {
             TK::ImmediatePrefix => {
                 self.advance();
-                let op1 = self.parse_op()?;
+                let op1 = self.parse_atom()?;
                 match self.curr().kind {
                     TK::Comma => {
                         self.advance();
-                        let op2 = self.parse_op()?;
+                        let op2 = self.parse_atom()?;
                         Ok(OperandForm::Imm2(op1, op2))
                     }
                     _ => Ok(OperandForm::Imm1(op1)),
                 }
             }
             TK::NamedLiteral | TK::NumberLiteral | TK::Sym => {
-                let op1 = self.parse_op()?;
+                let op1 = self.parse_atom()?;
                 match self.curr().kind {
                     TK::Comma => {
                         self.advance();
-                        let op2 = self.parse_op()?;
+                        let op2 = self.parse_atom()?;
                         Ok(OperandForm::Two(op1, op2))
                     }
                     _ => Ok(OperandForm::One(op1)),
@@ -722,15 +807,14 @@ impl<'a> Parser<'a> {
             }
             TK::Comma => {
                 self.advance();
-                let op = self.parse_op()?;
+                let op = self.parse_atom()?;
                 Ok(OperandForm::Two(Atom::None, op))
             }
             _ => Ok(OperandForm::None),
         }
     }
 
-    /// op := NamedLiteral | NumberLiteral | Sym
-    fn parse_op(&mut self) -> Result<Atom, ParseError> {
+    fn parse_atom(&mut self) -> Result<Atom, ParseError> {
         let val = match self.curr().kind {
             TokenKind::NamedLiteral => {
                 let name_lit = self.curr().value.expect_named_literal();
@@ -744,10 +828,7 @@ impl<'a> Parser<'a> {
                 let sym = self.curr().value.expect_sym();
                 Ok(Atom::Symbol(sym.0.to_owned()))
             }
-            _ => Err(ParseError {
-                message: "Expected operand".to_string(),
-                span: self.curr_span(),
-            }),
+            _ => Err(self.err("Expected operand".to_string(), self.curr_span())),
         }?;
 
         self.advance();

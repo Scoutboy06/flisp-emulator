@@ -1,13 +1,12 @@
 use std::{fs::File, path::PathBuf};
 
-use assembler::run_assemble;
+use assembler::codegen::{assemble, emit_fmem};
 use clap::{CommandFactory, Parser, Subcommand, builder::OsStr};
 use emulator::Emulator;
 use tui::ui::EmulatorVisualizer;
 
 use crate::fmem::parse_fmem;
-
-mod fmem;
+use flisp_core::fmem;
 
 /*
 CLI usage:
@@ -39,8 +38,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
     match args.command {
-        Some(Commands::Assemble { input, output }) => {
-            run_assemble(input, output)?;
+        Some(Commands::Assemble { input, output: _ }) => {
+            let file = std::fs::read_to_string(input.to_string_lossy().to_string())?;
+            let file_path = input.to_string_lossy().to_string();
+            let _res = assemble(&file, file_path);
+            dbg!(&_res);
+            println!("Assemble completed successfully.");
         }
         None => {
             if let Some(fmem) = args.fmem_file {

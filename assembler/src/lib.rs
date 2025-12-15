@@ -1,5 +1,3 @@
-mod lexer;
-mod output;
-mod parser;
-
-pub use output::run_assemble;
+pub mod codegen;
+pub mod lexer;
+pub mod parser;

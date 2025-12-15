@@ -72,7 +72,9 @@ dependencies = [
 name = "assembler"
 version = "0.1.0"
 dependencies = [
+ "ariadne",
  "phf",
+ "srec",
 ]
 
 [[package]]
@@ -146,10 +148,10 @@ checksum = "a1d728cc89cf3aee9ff92b05e62b19ee65a02b5702cff7d5a377e32c6ae29d8d"
 name = "cli"
 version = "0.1.0"
 dependencies = [
- "ariadne",
  "assembler",
  "clap",
  "emulator",
+ "flisp-core",
  "tui",
 ]
 
@@ -322,6 +324,13 @@ name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "37909eebbb50d72f9059c3b6d82c0463f2ff062c9e95845c43a6c9c0355411be"
+
+[[package]]
+name = "flisp-core"
+version = "0.1.0"
+dependencies = [
+ "ariadne",
+]
 
 [[package]]
 name = "fnv"
@@ -716,6 +725,12 @@ name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+
+[[package]]
+name = "srec"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "17c3a0538ec242e3cd333cdcdc8b720faa2fa0a9d7f444cf1ff63e7d3303adfb"
 
 [[package]]
 name = "static_assertions"

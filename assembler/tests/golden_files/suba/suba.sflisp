@@ -1,3 +1,4 @@
+        ORG $20
         ; #Data
         SUBA #1
         SUBA #16

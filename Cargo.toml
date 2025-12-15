@@ -1,4 +1,4 @@
 [workspace]
-members = ["assembler","cli", "emulator", "tui"]
+members = ["assembler","cli", "emulator", "flisp-core", "tui"]
 resolver = "3"
 package.edition = "2024"
