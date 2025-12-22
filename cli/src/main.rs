@@ -15,44 +15,34 @@ CLI usage:
 */
 
 #[derive(Parser, Debug)]
-#[command(name = "Flisp Emulator", version, about = "Unified tool for the Flisp Emulator", long_about = None)]
-struct Cli {
-    #[arg(global = true)]
-    fmem_file: Option<PathBuf>,
-
-    #[command(subcommand)]
-    command: Option<Commands>,
-}
-
-#[derive(Subcommand, Debug)]
-enum Commands {
-    #[command(about = "Assemble an assembly file into a .fmem file")]
+#[command(name = "flisp", version, about = "Unified tool for the Flisp Emulator", long_about = None)]
+enum Cli {
+    #[command(about = "Run and visualize a flisp program. Supports .sflisp, .fmem and .s19 files")]
+    Run { input: PathBuf },
+    #[command(about = "Assemble your source code. Supports .sflisp files")]
     Assemble {
-        #[arg(short, long, default_value = "output.fmem")]
+        #[arg(short, long)]
         output: PathBuf,
         input: PathBuf,
     },
 }
 
+#[derive(Subcommand, Debug)]
+enum Commands {}
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
-    match args.command {
-        Some(Commands::Assemble { input, output: _ }) => {
+    match args {
+        Cli::Run { input } => {
+            run_visualize(input);
+        }
+        Cli::Assemble { input, output: _ } => {
             let file = std::fs::read_to_string(input.to_string_lossy().to_string())?;
             let file_path = input.to_string_lossy().to_string();
             let _res = assemble(&file, file_path);
             dbg!(&_res);
             println!("Assemble completed successfully.");
-        }
-        None => {
-            if let Some(fmem) = args.fmem_file {
-                run_visualize(fmem);
-                // dbg!(&fmem);
-     } else {
-                Cli::command().print_help()?;
-                println!();
-            }
         }
     }
 
@@ -75,6 +65,6 @@ fn run_visualize(input: PathBuf) {
     };
 
     let mut program = Emulator::default();
-    program.load_memory(&fmem);
+    program.load_memory(&fmem.mem);
     EmulatorVisualizer::viz(&mut program).unwrap()
 }

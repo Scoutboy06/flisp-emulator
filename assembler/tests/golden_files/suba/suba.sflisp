@@ -25,4 +25,5 @@
         SUBA $0A,Y
         SUBA %00001010,Y
 
-
+        ORG $FF
+        FCB $20

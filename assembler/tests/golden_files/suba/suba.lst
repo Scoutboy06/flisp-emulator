@@ -1,0 +1,35 @@
+QAflisp - FLISP Absolute crossassembler, Version 1.3
+(c) GMV 1989-2023
+
+
+File: suba.lst
+20                      1.         ORG $20
+---- File: "suba.sflisp"
+20                      2.         ; #Data
+20 94 01                3.         SUBA #1
+22 94 10                4.         SUBA #16
+24 94 10                5.         SUBA #$10
+26 94 10                6.         SUBA #%00010000
+                        7. 
+28                      8.         ; Adr
+28 A4 10                9.         SUBA 16
+2A A4 10               10.         SUBA $10
+2C A4 10               11.         SUBA %00010000
+                       12. 
+2E                     13.         ; n,SP
+2E B4 0A               14.         SUBA 10,SP
+30 B4 0A               15.         SUBA $0A,SP
+32 B4 0A               16.         SUBA %00001010,SP
+                       17. 
+34                     18.         ; n,X
+34 C4 0A               19.         SUBA 10,X
+36 C4 0A               20.         SUBA $0A,X
+38 C4 0A               21.         SUBA %00001010,X
+                       22. 
+3A                     23.         ; n,Y
+3A D4 0A               24.         SUBA 10,Y
+3C D4 0A               25.         SUBA $0A,Y
+3E D4 0A               26.         SUBA %00001010,Y
+                       27. 
+FF                     28.         ORG $FF
+FF 20                  29.         FCB $20

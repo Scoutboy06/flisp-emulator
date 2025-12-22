@@ -3,15 +3,16 @@
 import subprocess
 from pathlib import Path
 import sys
+import shutil
 
 ROOT = Path(__file__).resolve().parent
 GOLDEN_DIR = ROOT / "golden_files"
-QAFLISP = ROOT / "qaflisp"
+QAFLISP = shutil.which("qaflisp")
 
 
 def run_qaflisp(test_dir: Path, input_file: Path):
     result = subprocess.run(
-        [str(QAFLISP), input_file.name],
+        [str(QAFLISP), '-L', input_file.name],
         cwd=test_dir,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
@@ -26,8 +27,8 @@ def run_qaflisp(test_dir: Path, input_file: Path):
 
 
 def main():
-    if not QAFLISP.exists():
-        print("[ERROR] qaflisp executable not found")
+    if not QAFLISP:
+        print("[ERROR] qaflisp executable not found in PATH")
         sys.exit(1)
 
     sflisp_files = sorted(GOLDEN_DIR.rglob("*.sflisp"))
