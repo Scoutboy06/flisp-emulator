@@ -17,6 +17,18 @@ type Instruction = {
   mode: string,
 }
 
+console.log(
+  Array.from(
+    new Set(
+      ins.map(
+        ins =>
+          ins.name.split(' ')[0]
+      )
+    )
+  )
+    .join('|')
+)
+
 /*
 Modes:
 
@@ -164,20 +176,20 @@ function group(data: Array<{ expects: string[], out: string[] }>, idx = 0) {
   return unique
 }
 
-console.log(JSON.stringify(parsedIns, null, 2));
+// console.log(JSON.stringify(parsedIns, null, 2));
 
-console.log(
-  Array.from(new Set(
-    parsedIns
-      .flatMap(ins => ins.expects.slice(1))
-  ))
-)
-console.log(
-  Array.from(new Set(
-    parsedIns
-      .flatMap(ins => ins.out.slice(1))
-  ))
-)
+// console.log(
+//   Array.from(new Set(
+//     parsedIns
+//       .flatMap(ins => ins.expects.slice(1))
+//   ))
+// )
+// console.log(
+//   Array.from(new Set(
+//     parsedIns
+//       .flatMap(ins => ins.out.slice(1))
+//   ))
+// )
 
 type InstrSpec = {
   expects: string[];
@@ -278,14 +290,14 @@ function genMatchArm(spec: InstrSpec): string {
 
 
 
-let inputs = parsedIns.slice(0);
-inputs.sort((a, b) => {
-  const opcodeA = parseInt(a.out[0], 16);
-  const opcodeB = parseInt(b.out[0], 16);
-  return opcodeA - opcodeB;
-});
-const outputs = inputs.map(genMatchArm);
-console.log(outputs.join("\n"));
+// let inputs = parsedIns.slice(0);
+// inputs.sort((a, b) => {
+//   const opcodeA = parseInt(a.out[0], 16);
+//   const opcodeB = parseInt(b.out[0], 16);
+//   return opcodeA - opcodeB;
+// });
+// const outputs = inputs.map(genMatchArm);
+// console.log(outputs.join("\n"));
 
 
 // const tree = group(parsedIns);

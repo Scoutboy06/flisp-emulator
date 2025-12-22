@@ -181,7 +181,11 @@ impl<'a> Parser<'a> {
                     let ins = self.parse_instruction()?;
                     lines.push(AsmLine::Instruction(ins));
                 }
-                TK::Sym => todo!(),
+                TK::Sym => {
+                    let name = self.curr().value.expect_sym();
+                    let span = self.curr().span.clone();
+                    self.advance();
+                }
                 TK::Directive => {
                     let dir = self.parse_directive()?;
                     lines.push(AsmLine::Directive(dir));

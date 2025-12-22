@@ -34,6 +34,12 @@ pub fn parse_fmem(path: PathBuf) -> ParseResult {
     let mut mem = [0u8; 256];
 
     for (line_idx, line) in src.lines().enumerate() {
+        let line = line.trim();
+
+        if !line.starts_with('#') {
+            continue; // ignore non-directive lines
+        }
+
         let line_start: usize = src
             .split_inclusive('\n')
             .take(line_idx)

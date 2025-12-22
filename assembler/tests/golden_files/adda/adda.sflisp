@@ -1,1 +1,2 @@
-; TODO
+LDA #$20
+ADDA #$10,X

@@ -48,7 +48,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         None => {
             if let Some(fmem) = args.fmem_file {
                 run_visualize(fmem);
-            } else {
+                // dbg!(&fmem);
+     } else {
                 Cli::command().print_help()?;
                 println!();
             }
