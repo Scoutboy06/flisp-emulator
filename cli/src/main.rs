@@ -65,8 +65,13 @@ fn run_visualize(input: PathBuf) {
         }
     } else if extension == Some(&OsStr::from("sflisp")) {
         todo!()
+    } else if extension.is_some() {
+        panic!(
+            "Unsupported file extension: {}",
+            extension.unwrap().to_string_lossy()
+        );
     } else {
-        panic!("Unsupported file extension");
+        panic!("Input file has no extension");
     };
 
     let mut program = Emulator::default();

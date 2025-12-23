@@ -62,9 +62,6 @@ enum OperandForm {
 
     /// Immediate: `#5` or `#label`
     Imm1(Atom),
-
-    /// Immediate with two operands: `#5,X` or `#label,Y`
-    Imm2(Atom, Atom),
 }
 
 #[derive(Debug, Clone)]
@@ -789,14 +786,7 @@ impl<'a> Parser<'a> {
             TK::ImmediatePrefix => {
                 self.advance();
                 let op1 = self.parse_atom()?;
-                match self.curr().kind {
-                    TK::Comma => {
-                        self.advance();
-                        let op2 = self.parse_atom()?;
-                        Ok(OperandForm::Imm2(op1, op2))
-                    }
-                    _ => Ok(OperandForm::Imm1(op1)),
-                }
+                Ok(OperandForm::Imm1(op1))
             }
             TK::NamedLiteral | TK::NumberLiteral | TK::Sym => {
                 let op1 = self.parse_atom()?;

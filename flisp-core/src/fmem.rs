@@ -147,7 +147,7 @@ fn parse_directive<'a>(
     // extract directive name (token up to whitespace or end)
     let directive_name_end = after_hash
         .find(char::is_whitespace)
-        .unwrap_or_else(|| after_hash.len());
+        .unwrap_or(after_hash.len());
     let directive_name = &after_hash[..directive_name_end];
 
     // To compute the span of the directive name within the whole source, find its offset

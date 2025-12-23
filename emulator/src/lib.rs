@@ -98,9 +98,9 @@ impl Default for Emulator {
 
 impl Emulator {
     pub fn load_memory(&mut self, data: &[u8; 256]) {
-        for i in 0..256 {
-            self.memory[i] = Register::new(data[i]);
-            self.source_memory[i] = Register::new(data[i]);
+        for (i, mem) in data.iter().enumerate().take(256) {
+            self.memory[i] = Register::new(*mem);
+            self.source_memory[i] = Register::new(*mem);
         }
     }
 
@@ -157,7 +157,7 @@ impl Emulator {
 
     pub fn reset(&mut self) {
         self.q_state = QState::Reset;
-        self.memory = self.source_memory.clone();
+        self.memory = self.source_memory;
         self.clk_count = 0;
         self.step();
     }

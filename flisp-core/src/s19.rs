@@ -12,7 +12,7 @@ pub enum S19ParseError {
 }
 
 pub fn parse_s19(path: PathBuf) -> Result<[u8; 256], S19ParseError> {
-    let src = std::fs::read_to_string(&path).map_err(|e| S19ParseError::IOError(e))?;
+    let src = std::fs::read_to_string(&path).map_err(S19ParseError::IOError)?;
 
     let records: Vec<_> = srec::read_records(&src).collect();
 

@@ -47,9 +47,9 @@ impl Register {
     }
 }
 
-impl Into<u8> for Register {
-    fn into(self) -> u8 {
-        self.data
+impl From<Register> for u8 {
+    fn from(reg: Register) -> Self {
+        reg.data
     }
 }
 
