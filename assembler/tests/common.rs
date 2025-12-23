@@ -37,7 +37,7 @@ pub fn make_test(src: &str) {
     .expect("Failed to assemble source code");
 
     let my_s19 = emit_s19(&mem);
-    let my_fmem = emit_fmem(&mem);
+    let my_fmem = emit_fmem(&mem, "test.fmem");
 
     compare_s19(&s19, &my_s19);
     compare_fmem(&fmem, &my_fmem);

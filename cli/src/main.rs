@@ -1,6 +1,6 @@
 use std::{fs::File, path::PathBuf};
 
-use assembler::codegen::{assemble, emit_s19};
+use assembler::codegen::{assemble, emit_fmem, emit_s19};
 use clap::{Parser, Subcommand, builder::OsStr};
 use emulator::Emulator;
 use tui::ui::EmulatorVisualizer;
@@ -40,9 +40,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 res.err().unwrap().report_on(&file_path, &file);
                 panic!();
             };
+
             let s19_str = emit_s19(&mem);
-            let output_file_name = format!("{}.s19", file_stem);
-            std::fs::write(&output_file_name, s19_str)?;
+            let s19_file_name = format!("{}.s19", file_stem);
+            std::fs::write(&s19_file_name, s19_str)?;
+
+            let fmem_file_name = format!("{}.fmem", file_stem);
+            let fmem_str = emit_fmem(&mem, &fmem_file_name);
+            std::fs::write(&fmem_file_name, fmem_str)?;
 
             println!("Assemble completed successfully.");
         }

@@ -313,6 +313,14 @@ fn create_s1_record(mem: &[u8; 256], start: u8, end: u8) -> Record {
     })
 }
 
-pub fn emit_fmem(_mem: &[u8; 256]) -> String {
-    "".to_owned()
+pub fn emit_fmem(mem: &[u8; 256], file_name: &str) -> String {
+    let mut out = format!("File: {file_name}\n\n # ClearAllMemory\n # ClearAllRegisters");
+
+    for (adr, byte) in mem.iter().enumerate() {
+        if *byte != 0 {
+            out.push_str(&format!("\n #setMemory  {:02X}={:02X}", adr, byte))
+        }
+    }
+
+    out
 }
