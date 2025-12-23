@@ -1,7 +1,7 @@
 use std::{collections::HashMap, ops::Range};
 
 use ariadne::{Label, Report, ReportKind, Source};
-use srec::Record;
+use srec::{Address16, Data, Record};
 
 use crate::{
     lexer::directive::Directive,
@@ -119,7 +119,6 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
         .map_err(AssembleError::Parse)?;
 
     let symbols = collect_symbols(&ast)?;
-    dbg!(&symbols);
 
     let mut memory = Memory::default();
 
@@ -256,10 +255,64 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
 }
 
 pub fn emit_s19(mem: &[u8; 256]) -> String {
-    let records: Vec<Record> = Vec::new();
+    // Each record holds up to 30 bytes of equential data.
+    //
+    // If there are gaps in the memory (2 or more null bytes in row),
+    // separate records are created.
+    //
+    // A separate S9 record is created for the start address stored at
+    // memory location 0xFF, even if that memory is set via a S1 record already.
+
+    let mut records: Vec<Record> = Vec::new();
+
+    let mut null_count = 0;
+    let mut seq_start: Option<u8> = None;
+    for addr in 0..=255_u8 {
+        let byte = mem[addr as usize];
+        if byte == 0 {
+            null_count += 1;
+            if null_count == 2 {
+                // End of a sequential data block
+                if let Some(start) = seq_start {
+                    let end = addr - 2;
+                    records.push(create_s1_record(mem, start, end));
+                    seq_start = None;
+                }
+            }
+        } else {
+            if null_count >= 2 || seq_start.is_none() {
+                // Start of a new sequential data block
+                seq_start = Some(addr);
+            } else if seq_start.is_some_and(|s| addr - s == 30) {
+                let start = seq_start.unwrap();
+                records.push(create_s1_record(mem, start, addr - 1));
+                seq_start = Some(addr);
+            }
+            null_count = 0;
+        }
+    }
+
+    if let Some(start) = seq_start {
+        let end = 255_u8;
+        records.push(create_s1_record(mem, start, end));
+    }
+
+    let start_addr = mem[255];
+    if start_addr != 0 {
+        records.push(Record::S9(Address16(start_addr as u16)));
+    }
+
     srec::generate_srec_file(&records)
 }
 
+fn create_s1_record(mem: &[u8; 256], start: u8, end: u8) -> Record {
+    let data = mem[start as usize..=end as usize].to_owned();
+    Record::S1(Data {
+        address: Address16(start as u16),
+        data,
+    })
+}
+
 pub fn emit_fmem(_mem: &[u8; 256]) -> String {
-    todo!()
+    "".to_owned()
 }

@@ -7,3 +7,7 @@ edition.workspace = true
 phf = { version = "0.13.1", features = ["macros"] }
 srec = "0.2.0"
 ariadne = "0.6.0"
+tempfile = "3.23.0"
+
+[dev-dependencies]
+pretty_assertions = "1.4.1"

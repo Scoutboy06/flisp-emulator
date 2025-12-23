@@ -29,15 +29,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Cli::Assemble { input } => {
             let file = std::fs::read_to_string(input.to_string_lossy().to_string())?;
+            let file_stem = input
+                .file_stem()
+                .expect("Failed to get file stem")
+                .to_string_lossy();
             let file_path = input.to_string_lossy().to_string();
-            let res = assemble(&file, file_path);
+            let res = assemble(&file, file_path.to_owned());
             let Ok(mem) = res else {
                 eprintln!("Assemble failed:");
-                res.err().unwrap();
+                res.err().unwrap().report_on(&file_path, &file);
                 panic!();
             };
             let s19_str = emit_s19(&mem);
-            println!("s19 out:\n{}", s19_str);
+            let output_file_name = format!("{}.s19", file_stem);
+            std::fs::write(&output_file_name, s19_str)?;
+
             println!("Assemble completed successfully.");
         }
     }
