@@ -14,11 +14,7 @@ enum Cli {
     #[command(about = "Run and visualize a flisp program. Supports .sflisp, .fmem and .s19 files")]
     Run { input: PathBuf },
     #[command(about = "Assemble your source code. Supports .sflisp files")]
-    Assemble {
-        #[arg(short, long)]
-        output: PathBuf,
-        input: PathBuf,
-    },
+    Assemble { input: PathBuf },
 }
 
 #[derive(Subcommand, Debug)]
@@ -31,7 +27,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Cli::Run { input } => {
             run_visualize(input);
         }
-        Cli::Assemble { input, output: _ } => {
+        Cli::Assemble { input } => {
             let file = std::fs::read_to_string(input.to_string_lossy().to_string())?;
             let file_path = input.to_string_lossy().to_string();
             let _res = assemble(&file, file_path);

@@ -164,5 +164,5 @@ static INSTRUCTIONS: phf::Map<&'static str, Instruction> = phf_map! {
 };
 
 pub fn parse_instruction(ins: &str) -> Option<Instruction> {
-    INSTRUCTIONS.get(ins).cloned()
+    INSTRUCTIONS.get(ins.to_uppercase().as_str()).cloned()
 }

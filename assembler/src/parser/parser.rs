@@ -37,7 +37,7 @@ impl AsmInstruction {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AsmDirective {
     pub span: Range<usize>,
     pub name: Directive,
@@ -210,7 +210,31 @@ impl<'a> Parser<'a> {
                 }
             }
             Directive::Equ => todo!(),
-            Directive::Fcb => todo!(),
+            Directive::Fcb => {
+                self.advance();
+                let mut args: Vec<Atom> = Vec::new();
+                loop {
+                    match self.curr().kind {
+                        TokenKind::NumberLiteral | TokenKind::Sym => {
+                            args.push(self.parse_atom()?);
+                        }
+                        _ => {
+                            break;
+                        }
+                    }
+                    if self.curr().kind == TokenKind::Comma {
+                        self.advance(); // Consume comma
+                    } else {
+                        break;
+                    }
+                }
+                let end = self.prev().span.end;
+                Ok(AsmDirective {
+                    span: start_pos..end,
+                    name: Directive::Fcb,
+                    args,
+                })
+            }
             Directive::Fcs => todo!(),
             Directive::Rmb => todo!(),
         }

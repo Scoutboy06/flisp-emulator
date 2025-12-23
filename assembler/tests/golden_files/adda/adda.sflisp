@@ -1,1 +1,29 @@
-; TODO
+        ORG $20
+        ; #Data
+        ADDA #1
+        ADDA #16
+        ADDA #$10
+        ADDA #%00010000
+
+        ; Adr
+        ADDA 16
+        ADDA $10
+        ADDA %00010000
+
+        ; n,SP
+        ADDA 10,SP
+        ADDA $0A,SP
+        ADDA %00001010,SP
+
+        ; n,X
+        ADDA 10,X
+        ADDA $0A,X
+        ADDA %00001010,X
+        
+        ; n,Y
+        ADDA 10,Y
+        ADDA $0A,Y
+        ADDA %00001010,Y
+
+        ORG $FF
+        FCB $20

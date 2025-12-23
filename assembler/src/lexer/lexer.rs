@@ -134,8 +134,8 @@ impl<'a> Lexer<'a> {
             let nxt = match self.curr {
                 Some(b'0' | b'1') => self.curr.unwrap() - b'0',
                 Some(b'0'..=b'9') if mult >= 10 => self.curr.unwrap() - b'0',
-                Some(b'a'..=b'f') if mult == 16 => self.curr.unwrap() - b'a' + 0x10,
-                Some(b'A'..=b'F') if mult == 16 => self.curr.unwrap() - b'A' + 0x10,
+                Some(b'a'..=b'f') if mult == 16 => self.curr.unwrap() - b'a' + 0xa,
+                Some(b'A'..=b'F') if mult == 16 => self.curr.unwrap() - b'A' + 0xa,
                 _ => break,
             };
 
