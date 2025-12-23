@@ -1,18 +1,12 @@
 use std::{fs::File, path::PathBuf};
 
-use assembler::codegen::{assemble, emit_fmem};
-use clap::{CommandFactory, Parser, Subcommand, builder::OsStr};
+use assembler::codegen::assemble;
+use clap::{Parser, Subcommand, builder::OsStr};
 use emulator::Emulator;
 use tui::ui::EmulatorVisualizer;
 
 use crate::fmem::parse_fmem;
-use flisp_core::fmem;
-
-/*
-CLI usage:
-- TODO: `myprogram <file>.fmem` - visualize
-- TODO: `myprogram assemble <file>.asm [-o <output>.fmem]` - assemble
-*/
+use flisp_core::{fmem, s19::parse_s19};
 
 #[derive(Parser, Debug)]
 #[command(name = "flisp", version, about = "Unified tool for the Flisp Emulator", long_about = None)]
@@ -52,19 +46,30 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 fn run_visualize(input: PathBuf) {
     let mut _file = File::open(input.clone()).expect("Failed to open file");
 
-    if input.extension() != Some(&OsStr::from("fmem")) {
-        panic!("Invalid file type");
-    }
+    let extension = input.extension();
 
-    let fmem = match parse_fmem(input) {
-        Ok(fmem) => fmem,
-        Err(e) => {
-            e.report();
-            std::process::exit(1);
+    let mem: [u8; 256] = if input.extension() == Some(&OsStr::from("s19")) {
+        match parse_s19(input) {
+            Ok(mem) => mem,
+            Err(e) => {
+                panic!("S19 Parse Error: {:?}", e);
+            }
         }
+    } else if extension == Some(&OsStr::from("fmem")) {
+        match parse_fmem(input) {
+            Ok(fmem) => fmem.mem,
+            Err(e) => {
+                e.report();
+                std::process::exit(1);
+            }
+        }
+    } else if extension == Some(&OsStr::from("sflisp")) {
+        todo!()
+    } else {
+        panic!("Unsupported file extension");
     };
 
     let mut program = Emulator::default();
-    program.load_memory(&fmem.mem);
+    program.load_memory(&mem);
     EmulatorVisualizer::viz(&mut program).unwrap()
 }
