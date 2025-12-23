@@ -8,7 +8,7 @@ pub enum S19ParseError {
     ReaderError(ReaderError),
     IOError(std::io::Error),
     UnsupportedS19RecordType(Record),
-    S19AdrTooLarge(Record),
+    AddrTooLarge(Record),
 }
 
 pub fn parse_s19(path: PathBuf) -> Result<[u8; 256], S19ParseError> {
@@ -26,18 +26,52 @@ pub fn parse_s19(path: PathBuf) -> Result<[u8; 256], S19ParseError> {
                         let adr = if s.address.0 <= 0xFF {
                             s.address.0 as u8 + i as u8
                         } else {
-                            return Err(S19ParseError::S19AdrTooLarge(Record::S1(s)));
+                            return Err(S19ParseError::AddrTooLarge(Record::S1(s)));
                         };
                         mem[adr as usize] = *byte;
                     }
                 }
-                Record::S2(_s) => todo!(),
-                Record::S3(_s) => todo!(),
+                Record::S2(s) => {
+                    for (i, byte) in s.data.iter().enumerate() {
+                        let adr = if s.address.0 <= 0xFF {
+                            s.address.0 as u8 + i as u8
+                        } else {
+                            return Err(S19ParseError::AddrTooLarge(Record::S2(s)));
+                        };
+                        mem[adr as usize] = *byte;
+                    }
+                }
+                Record::S3(s) => {
+                    for (i, byte) in s.data.iter().enumerate() {
+                        let adr = if s.address.0 <= 0xFF {
+                            s.address.0 as u8 + i as u8
+                        } else {
+                            return Err(S19ParseError::AddrTooLarge(Record::S3(s)));
+                        };
+                        mem[adr as usize] = *byte;
+                    }
+                }
+                Record::S7(s) => {
+                    let adr = if s.0 <= 0xFF {
+                        s.0 as u8
+                    } else {
+                        return Err(S19ParseError::AddrTooLarge(Record::S7(s)));
+                    };
+                    mem[0xFF] = adr;
+                }
+                Record::S8(s) => {
+                    let adr = if s.0 <= 0xFF {
+                        s.0 as u8
+                    } else {
+                        return Err(S19ParseError::AddrTooLarge(Record::S8(s)));
+                    };
+                    mem[0xFF] = adr;
+                }
                 Record::S9(s) => {
                     let adr = if s.0 <= 0xFF {
                         s.0 as u8
                     } else {
-                        return Err(S19ParseError::S19AdrTooLarge(Record::S9(s)));
+                        return Err(S19ParseError::AddrTooLarge(Record::S9(s)));
                     };
                     mem[0xFF] = adr;
                 }
