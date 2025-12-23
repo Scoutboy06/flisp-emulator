@@ -1,4 +1,7 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, ops::Range};
+
+use ariadne::{Label, Report, ReportKind, Source};
+use srec::Record;
 
 use crate::{
     lexer::directive::Directive,
@@ -12,6 +15,37 @@ pub enum AssembleError {
     Parse(ParseError),
     OverflowFromInstruction(AsmInstruction),
     OverflowFromDirective(AsmDirective),
+}
+
+impl AssembleError {
+    pub fn report_on(&self, file_name: &str, src: &str) {
+        let report = self.build_report(file_name);
+        report.eprint((file_name, Source::from(src))).unwrap();
+    }
+
+    pub fn build_report<'a>(&'a self, file_name: &'a str) -> Report<'a, (&'a str, Range<usize>)> {
+        match self {
+            AssembleError::Parse(e) => e.build_report(file_name),
+            AssembleError::OverflowFromInstruction(ins) => {
+                Report::build(ReportKind::Error, (file_name, ins.span.to_owned()))
+                    .with_message("Memory overflow occurred while assembling instruction")
+                    .with_label(
+                        Label::new((file_name, ins.span.to_owned()))
+                            .with_message(format!("this instruction")),
+                    )
+                    .finish()
+            }
+            AssembleError::OverflowFromDirective(dir) => {
+                Report::build(ReportKind::Error, (file_name, dir.span.to_owned()))
+                    .with_message("Memory overflow occurred while assembling directive")
+                    .with_label(
+                        Label::new((file_name, dir.span.to_owned()))
+                            .with_message(format!("this directive")),
+                    )
+                    .finish()
+            }
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -221,10 +255,11 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
     Ok(symbols)
 }
 
-pub fn emit_s19(_program: &ProgramAST) -> String {
-    todo!()
+pub fn emit_s19(mem: &[u8; 256]) -> String {
+    let records: Vec<Record> = Vec::new();
+    srec::generate_srec_file(&records)
 }
 
-pub fn emit_fmem(_program: &ProgramAST) -> String {
+pub fn emit_fmem(_mem: &[u8; 256]) -> String {
     todo!()
 }

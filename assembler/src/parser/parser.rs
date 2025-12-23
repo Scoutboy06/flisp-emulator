@@ -89,6 +89,7 @@ fn op1(opcode: u8, a: Operand) -> (u8, Vec<Operand>) {
     (opcode, vec![a])
 }
 
+#[allow(dead_code)]
 fn op2(opcode: u8, a: Operand, b: Operand) -> (u8, Vec<Operand>) {
     (opcode, vec![a, b])
 }

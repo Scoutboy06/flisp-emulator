@@ -1,6 +1,6 @@
 use std::{fs::File, path::PathBuf};
 
-use assembler::codegen::assemble;
+use assembler::codegen::{assemble, emit_s19};
 use clap::{Parser, Subcommand, builder::OsStr};
 use emulator::Emulator;
 use tui::ui::EmulatorVisualizer;
@@ -30,8 +30,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Cli::Assemble { input } => {
             let file = std::fs::read_to_string(input.to_string_lossy().to_string())?;
             let file_path = input.to_string_lossy().to_string();
-            let _res = assemble(&file, file_path);
-            dbg!(&_res);
+            let res = assemble(&file, file_path);
+            let Ok(mem) = res else {
+                eprintln!("Assemble failed:");
+                res.err().unwrap();
+                panic!();
+            };
+            let s19_str = emit_s19(&mem);
+            println!("s19 out:\n{}", s19_str);
             println!("Assemble completed successfully.");
         }
     }
