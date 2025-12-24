@@ -153,9 +153,18 @@ impl<'a> Lexer<'a> {
     fn collect_identifier(&mut self) -> String {
         let mut id = String::new();
 
+        if !matches!(self.curr, Some(b'A'..=b'Z' | b'a'..=b'z' | b'_')) {
+            unreachable!();
+        }
+
+        id.push(self.curr.unwrap() as char);
+        self.advance();
+
         while let Some(b) = self.curr {
             match b {
-                b'A'..=b'Z' | b'a'..=b'z' | b'_' => id.push(self.curr.unwrap() as char),
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'_' => {
+                    id.push(self.curr.unwrap() as char)
+                }
                 _ => break,
             }
 
