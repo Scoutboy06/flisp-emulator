@@ -181,8 +181,16 @@ impl<'a> Parser<'a> {
                 }
                 TK::Sym => {
                     let name = self.curr().value.expect_sym();
-                    let span = self.curr().span.clone();
+                    let span = self.curr().span.to_owned();
+                    lines.push(AsmLine::Symbol(AsmSymbol {
+                        span: span.clone(),
+                        name: name.0.to_owned(),
+                    }));
+
                     self.advance();
+                    if self.curr().kind == TK::Colon {
+                        self.advance();
+                    }
                 }
                 TK::Directive => {
                     let dir = self.parse_directive()?;
@@ -210,19 +218,29 @@ impl<'a> Parser<'a> {
                     _ => Err(self.err("Expected number or symbol".into(), span)),
                 }
             }
-            Directive::Equ => todo!(),
+            Directive::Equ => {
+                self.advance();
+                if matches!(self.curr().kind, TokenKind::NumberLiteral | TokenKind::Sym) {
+                    let span = start_pos..self.curr().span.end;
+                    Ok(AsmDirective {
+                        span,
+                        name: Directive::Equ,
+                        args: vec![self.parse_atom().unwrap()],
+                    })
+                } else {
+                    Err(self.err(
+                        "Expected number or symbol".into(),
+                        self.curr().span.to_owned(),
+                    ))
+                }
+            }
             Directive::Fcb => {
                 self.advance();
                 let mut args: Vec<Atom> = Vec::new();
-                loop {
-                    match self.curr().kind {
-                        TokenKind::NumberLiteral | TokenKind::Sym => {
-                            args.push(self.parse_atom()?);
-                        }
-                        _ => {
-                            break;
-                        }
-                    }
+
+                while let TokenKind::NumberLiteral | TokenKind::Sym = self.curr().kind {
+                    args.push(self.parse_atom()?);
+
                     if self.curr().kind == TokenKind::Comma {
                         self.advance(); // Consume comma
                     } else {
