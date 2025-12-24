@@ -26,15 +26,14 @@ pub fn make_test(src: &str) {
     let s19 = fs::read_to_string(dir.join("test.s19")).unwrap();
     let fmem = fs::read_to_string(dir.join("test.fmem")).unwrap();
 
-    let mem = assemble(
-        src,
-        input_path
-            .file_name()
-            .unwrap()
-            .to_string_lossy()
-            .to_string(),
-    )
-    .expect("Failed to assemble source code");
+    let file_path = input_path.to_string_lossy().to_string();
+    let mem = match assemble(src, file_path.to_owned()) {
+        Ok(mem) => mem,
+        Err(err) => {
+            err.report_on(file_path.as_str(), src);
+            std::process::exit(1);
+        }
+    };
 
     let my_s19 = emit_s19(&mem);
     let my_fmem = emit_fmem(&mem, "test.fmem");
