@@ -87,7 +87,7 @@ DisplaySegE:    LDX Segmentkod      ; X <- Segmentkod
 DisplaySegE_1:  LDA DIPSWITCH       ; A <- M(DIPSWITCH)
                 CMPA #10            ; A<10 ?
                 BLO DisplaySegE_2 	; YES
-                LDA #SEG_ERROR		  ; NO
+                LDA #SEG_ERROR		; NO
                 JMP DisplaySegE_3
 DisplaySegE_2:  LDA A,X             ; A <- M(A+X)
 DisplaySegE_3:  STA SEGMENT7        ; M(SEGMENT7) <- A

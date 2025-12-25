@@ -6,7 +6,8 @@ use srec::{Address16, Data, Record};
 use crate::{
     lexer::directive::Directive,
     parser::{
-        AsmDirective, AsmInstruction, AsmLine, Atom, Operand, ParseError, Parser, ProgramAST,
+        AsmDirective, AsmInstruction, AsmLine, Atom, NumOrSym, Operand, ParseError, Parser,
+        ProgramAST,
     },
 };
 
@@ -133,27 +134,42 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                         Operand::Imm(val)
                         | Operand::AbsAdr(val)
                         | Operand::RelAdr(val)
-                        | Operand::N(val) => {
-                            memory.write_byte(*val).map_err(|_| {
-                                AssembleError::OverflowFromInstruction(ins.to_owned())
-                            })?;
-                        }
+                        | Operand::N(val) => match val {
+                            NumOrSym::Num(n) => {
+                                memory.write_byte(*n).map_err(|_| {
+                                    AssembleError::OverflowFromInstruction(ins.to_owned())
+                                })?;
+                            }
+                            NumOrSym::Sym(sym) => {
+                                let val = symbols.get(sym.as_str()).ok_or_else(|| {
+                                    AssembleError::Parse(ParseError::new(
+                                        format!("Undefined symbol: {}", sym),
+                                        ins.span.to_owned(),
+                                    ))
+                                })?;
+                                memory.write_byte(*val).map_err(|_| {
+                                    AssembleError::OverflowFromInstruction(ins.to_owned())
+                                })?;
+                            }
+                        },
                         Operand::Reg(_) => { /* Not written to memory */ }
                     }
                 }
             }
             AsmLine::Directive(dir) => match dir.name {
                 Directive::Org => match dir.args.first() {
-                    Some(Atom::Number(n)) => memory.set_pc(*n),
-                    Some(Atom::Symbol(sym)) => {
-                        let new_addr = symbols.get(sym).ok_or_else(|| {
-                            AssembleError::Parse(ParseError::new(
-                                format!("Undefined symbol: {}", sym),
-                                dir.span,
-                            ))
-                        })?;
-                        memory.set_pc(*new_addr);
-                    }
+                    Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
+                        NumOrSym::Num(n) => memory.set_pc(*n),
+                        NumOrSym::Sym(sym) => {
+                            let new_addr = symbols.get(sym).ok_or_else(|| {
+                                AssembleError::Parse(ParseError::new(
+                                    format!("Undefined symbol: {}", sym),
+                                    dir.span,
+                                ))
+                            })?;
+                            memory.set_pc(*new_addr);
+                        }
+                    },
                     _ => {
                         return Err(AssembleError::Parse(ParseError::new(
                             "ORG directive requires an address argument".to_string(),
@@ -164,20 +180,22 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                 Directive::Fcb => {
                     for arg in dir.args.iter() {
                         match arg {
-                            Atom::Number(n) => memory.write_byte(*n).map_err(|_| {
-                                dbg!(AssembleError::OverflowFromDirective(dir.clone()))
-                            })?,
-                            Atom::Symbol(sym) => {
-                                let val = symbols.get(sym.as_str()).ok_or_else(|| {
-                                    AssembleError::Parse(ParseError::new(
-                                        format!("Undefined symbol: {}", sym),
-                                        dir.span.clone(),
-                                    ))
-                                })?;
-                                memory.write_byte(*val).map_err(|_| {
+                            Atom::NumOrSym(n_or_sym) => match n_or_sym {
+                                NumOrSym::Num(n) => memory.write_byte(*n).map_err(|_| {
                                     dbg!(AssembleError::OverflowFromDirective(dir.clone()))
-                                })?;
-                            }
+                                })?,
+                                NumOrSym::Sym(sym) => {
+                                    let val = symbols.get(sym.as_str()).ok_or_else(|| {
+                                        AssembleError::Parse(ParseError::new(
+                                            format!("Undefined symbol: {}", sym),
+                                            dir.span.clone(),
+                                        ))
+                                    })?;
+                                    memory.write_byte(*val).map_err(|_| {
+                                        dbg!(AssembleError::OverflowFromDirective(dir.clone()))
+                                    })?
+                                }
+                            },
                             _ => unreachable!(),
                         }
                     }
@@ -209,18 +227,18 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
             }
             AsmLine::Directive(dir) => match dir.name {
                 Directive::Org => match dir.args.first() {
-                    Some(Atom::Number(n)) => {
-                        memory.set_pc(*n);
-                    }
-                    Some(Atom::Symbol(sym)) => {
-                        let new_addr = symbols.get(sym).ok_or_else(|| {
-                            AssembleError::Parse(ParseError::new(
-                                format!("Undefined symbol: {}", sym),
-                                dir.span.to_owned(),
-                            ))
-                        })?;
-                        memory.set_pc(*new_addr);
-                    }
+                    Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
+                        NumOrSym::Num(n) => memory.set_pc(*n),
+                        NumOrSym::Sym(sym) => {
+                            let new_addr = symbols.get(sym).ok_or_else(|| {
+                                AssembleError::Parse(ParseError::new(
+                                    format!("Undefined symbol: {}", sym),
+                                    dir.span.to_owned(),
+                                ))
+                            })?;
+                            memory.set_pc(*new_addr);
+                        }
+                    },
                     _ => {
                         return Err(AssembleError::Parse(ParseError::new(
                             "ORG directive requires an address argument".to_string(),
