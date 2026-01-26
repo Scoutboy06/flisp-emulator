@@ -1,7 +1,5 @@
 # FLISP Emulator Project
 
-[![license](LICENSE)](LICENSE)
-
 > **Disclaimer:** This is a work-in-progress project. Features, usage, and code structure may change rapidly. Use with care and check for updates frequently.
 
 ## Overview
@@ -113,7 +111,7 @@ To run assembler tests, you need the `qaflisp` assembler. This is often bundled 
 
 ## Project Status & Contribution
 
-This project is actively developed and maintained by Elias. Contributions are welcome via pull requests and issues. If a `CONTRIBUTING.md` appears, please read it for guidelines.
+This project is semi-actively developed and maintained by Elias Wennerlund. Contributions are welcome via pull requests and issues. If a `CONTRIBUTING.md` appears, please read it for guidelines.
 
 For general questions, suggestions, or bug reports, use the GitHub Issues page or reach out to Elias directly.
 
@@ -121,4 +119,4 @@ For general questions, suggestions, or bug reports, use the GitHub Issues page o
 
 ## License
 
-See [LICENSE](LICENSE) for details (add if missing).
+See [LICENSE](LICENSE) for details.
