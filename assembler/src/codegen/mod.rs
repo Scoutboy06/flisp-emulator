@@ -125,11 +125,11 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
 
     for line in ast.lines {
         match line {
-            AsmLine::Instruction(ins) => {
+            AsmLine::Instruction { label: _, instr } => {
                 memory
-                    .write_byte(ins.opcode)
-                    .map_err(|_| AssembleError::OverflowFromInstruction(ins.to_owned()))?;
-                for operand in ins.operands.iter() {
+                    .write_byte(instr.opcode)
+                    .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
+                for operand in instr.operands.iter() {
                     match operand {
                         Operand::Imm(val)
                         | Operand::AbsAdr(val)
@@ -137,18 +137,18 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                         | Operand::N(val) => match val {
                             NumOrSym::Num(n) => {
                                 memory.write_byte(*n).map_err(|_| {
-                                    AssembleError::OverflowFromInstruction(ins.to_owned())
+                                    AssembleError::OverflowFromInstruction(instr.to_owned())
                                 })?;
                             }
                             NumOrSym::Sym(sym) => {
                                 let val = symbols.get(sym.as_str()).ok_or_else(|| {
                                     AssembleError::Parse(ParseError::new(
                                         format!("Undefined symbol: {}", sym),
-                                        ins.span.to_owned(),
+                                        instr.span.to_owned(),
                                     ))
                                 })?;
                                 memory.write_byte(*val).map_err(|_| {
-                                    AssembleError::OverflowFromInstruction(ins.to_owned())
+                                    AssembleError::OverflowFromInstruction(instr.to_owned())
                                 })?;
                             }
                         },
@@ -156,7 +156,7 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                     }
                 }
             }
-            AsmLine::Directive(dir) => match dir.name {
+            AsmLine::Directive { label: _, dir } => match dir.name {
                 Directive::Org => match dir.args.first() {
                     Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
                         NumOrSym::Num(n) => memory.set_pc(*n),
@@ -202,7 +202,6 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                 }
                 _ => todo!(),
             },
-            AsmLine::Symbol(_) => { /* Symbols are already collected */ }
         }
     }
 
@@ -211,60 +210,74 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
 
 fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleError> {
     let mut symbols: HashMap<String, u8> = HashMap::new();
-
     let mut memory = Memory::default();
 
     for line in &ast.lines {
         match line {
-            AsmLine::Symbol(sym) => {
-                if symbols.contains_key(&sym.name) {
-                    return Err(AssembleError::Parse(ParseError::new(
-                        format!("Duplicate symbol: {}", sym.name),
-                        sym.span.to_owned(),
-                    )));
-                }
-                symbols.insert(sym.name.to_owned(), memory.get_pc());
-            }
-            AsmLine::Directive(dir) => match dir.name {
-                Directive::Org => match dir.args.first() {
-                    Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
-                        NumOrSym::Num(n) => memory.set_pc(*n),
-                        NumOrSym::Sym(sym) => {
-                            let new_addr = symbols.get(sym).ok_or_else(|| {
-                                AssembleError::Parse(ParseError::new(
-                                    format!("Undefined symbol: {}", sym),
-                                    dir.span.to_owned(),
-                                ))
-                            })?;
-                            memory.set_pc(*new_addr);
-                        }
-                    },
-                    _ => {
+            AsmLine::Instruction { label, instr } => {
+                // Register label if present
+                if let Some(label_name) = label {
+                    if symbols.contains_key(label_name) {
                         return Err(AssembleError::Parse(ParseError::new(
-                            "ORG directive requires an address argument".to_string(),
+                            format!("Duplicate symbol: {}", label_name),
+                            instr.span.to_owned(),
+                        )));
+                    }
+                    symbols.insert(label_name.to_owned(), memory.get_pc());
+                }
+                // Advance memory for instruction
+                memory
+                    .write_byte(instr.opcode)
+                    .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
+            }
+            AsmLine::Directive { label, dir } => {
+                // Register label if present
+                if let Some(label_name) = label {
+                    if symbols.contains_key(label_name) {
+                        return Err(AssembleError::Parse(ParseError::new(
+                            format!("Duplicate symbol: {}", label_name),
                             dir.span.to_owned(),
                         )));
                     }
-                },
-                Directive::Equ => {
-                    return Err(AssembleError::Parse(ParseError::new(
-                        "EQU directives require a symbol definition".to_string(),
-                        dir.span.to_owned(),
-                    )));
+                    symbols.insert(label_name.to_owned(), memory.get_pc());
                 }
-                Directive::Fcb => {
-                    let size = dir.args.len() as u8;
-                    memory
-                        .inc_pc(size)
-                        .map_err(|_| dbg!(AssembleError::OverflowFromDirective(dir.to_owned())))?;
+                // Process directive
+                match dir.name {
+                    Directive::Org => match dir.args.first() {
+                        Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
+                            NumOrSym::Num(n) => memory.set_pc(*n),
+                            NumOrSym::Sym(sym) => {
+                                let new_addr = symbols.get(sym).ok_or_else(|| {
+                                    AssembleError::Parse(ParseError::new(
+                                        format!("Undefined symbol: {}", sym),
+                                        dir.span.to_owned(),
+                                    ))
+                                })?;
+                                memory.set_pc(*new_addr);
+                            }
+                        },
+                        _ => {
+                            return Err(AssembleError::Parse(ParseError::new(
+                                "ORG directive requires an address argument".to_string(),
+                                dir.span.to_owned(),
+                            )));
+                        }
+                    },
+                    Directive::Equ => {
+                        return Err(AssembleError::Parse(ParseError::new(
+                            "EQU directives require a symbol definition".to_string(),
+                            dir.span.to_owned(),
+                        )));
+                    }
+                    Directive::Fcb => {
+                        let size = dir.args.len() as u8;
+                        memory.inc_pc(size).map_err(|_| {
+                            dbg!(AssembleError::OverflowFromDirective(dir.to_owned()))
+                        })?;
+                    }
+                    Directive::Fcs => todo!(),
+                    Directive::Rmb => todo!(),
                 }
-                Directive::Fcs => todo!(),
-                Directive::Rmb => todo!(),
-            },
-            AsmLine::Instruction(ins) => {
-                memory
-                    .write_byte(ins.opcode)
-                    .map_err(|_| AssembleError::OverflowFromInstruction(ins.to_owned()))?;
             }
         }
     }

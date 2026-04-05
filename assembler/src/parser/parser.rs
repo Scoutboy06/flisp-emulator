@@ -16,9 +16,14 @@ pub struct ProgramAST {
 
 #[derive(Debug)]
 pub enum AsmLine {
-    Instruction(AsmInstruction),
-    Directive(AsmDirective),
-    Symbol(AsmSymbol),
+    Instruction {
+        label: Option<String>,
+        instr: AsmInstruction,
+    },
+    Directive {
+        label: Option<String>,
+        dir: AsmDirective,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -68,6 +73,7 @@ enum OperandForm {
 pub enum Atom {
     NumOrSym(NumOrSym),
     Reg(NamedLiteral),
+    String(String),
     None,
 }
 
@@ -177,32 +183,43 @@ impl<'a> Parser<'a> {
         let mut lines: Vec<AsmLine> = Vec::new();
 
         use TokenKind as TK;
-        // use TokenValue as TV;
         while self.curr().kind != TK::Eof {
+            // Try to parse an optional label
+            let label = if self.curr().kind == TK::Sym {
+                let name = self.curr().value.expect_sym();
+                let label_name = name.0.to_owned();
+                self.advance();
+
+                if self.curr().kind == TK::Colon {
+                    self.advance();
+                }
+
+                Some(label_name)
+            } else {
+                None
+            };
+
+            // Parse instruction or directive with the optional label
             match self.curr().kind {
                 TK::Instruction => {
-                    let ins = self.parse_instruction()?;
-                    lines.push(AsmLine::Instruction(ins));
-                }
-                TK::Sym => {
-                    let name = self.curr().value.expect_sym();
-                    let span = self.curr().span.to_owned();
-                    lines.push(AsmLine::Symbol(AsmSymbol {
-                        span: span.clone(),
-                        name: name.0.to_owned(),
-                    }));
-
-                    self.advance();
-                    if self.curr().kind == TK::Colon {
-                        self.advance();
-                    }
+                    let instr = self.parse_instruction()?;
+                    lines.push(AsmLine::Instruction { label, instr });
                 }
                 TK::Directive => {
                     let dir = self.parse_directive()?;
-                    lines.push(AsmLine::Directive(dir));
+                    lines.push(AsmLine::Directive { label, dir });
                 }
-                _ => todo!("{:?}", self.curr()),
-            };
+                TK::Eof => break,
+                _ => {
+                    return Err(self.err(
+                        format!(
+                            "Expected instruction or directive, got {:?}",
+                            self.curr().kind
+                        ),
+                        self.curr_span(),
+                    ));
+                }
+            }
         }
 
         Ok(ProgramAST { lines })
