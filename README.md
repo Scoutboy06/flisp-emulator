@@ -109,14 +109,6 @@ To run assembler tests, you need the `qaflisp` assembler. This is often bundled 
 
 ---
 
-## Project Status & Contribution
-
-This project is semi-actively developed and maintained by Elias Wennerlund. Contributions are welcome via pull requests and issues. If a `CONTRIBUTING.md` appears, please read it for guidelines.
-
-For general questions, suggestions, or bug reports, use the GitHub Issues page or reach out to Elias directly.
-
----
-
 ## License
 
 See [LICENSE](LICENSE) for details.
