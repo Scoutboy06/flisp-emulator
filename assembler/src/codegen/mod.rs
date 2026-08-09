@@ -203,6 +203,7 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                         }
                     }
                 }
+                Directive::Equ => {}
                 _ => todo!(),
             },
         }
@@ -243,7 +244,41 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                     .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
             }
             AsmLine::Directive { label, dir } => {
-                // Register label if present
+                if dir.name == Directive::Equ {
+                    let label_name = label.as_ref().ok_or_else(|| {
+                        AssembleError::Parse(ParseError::new(
+                            "EQU directives require a symbol definition",
+                            dir.span.to_owned(),
+                        ))
+                    })?;
+                    if symbols.contains_key(label_name) {
+                        return Err(AssembleError::Parse(ParseError::new(
+                            format!("Duplicate symbol: {}", label_name),
+                            dir.span.to_owned(),
+                        )));
+                    }
+
+                    let value = match dir.args.first() {
+                        Some(Atom::Expr(Expression::Number { value, .. })) => *value,
+                        Some(Atom::Expr(Expression::Symbol { name, span })) => {
+                            *symbols.get(name).ok_or_else(|| {
+                                AssembleError::Parse(ParseError::new(
+                                    format!("Undefined symbol: {}", name),
+                                    span.to_owned(),
+                                ))
+                            })?
+                        }
+                        _ => {
+                            return Err(AssembleError::Parse(ParseError::new(
+                                "EQU directive requires a value",
+                                dir.span.to_owned(),
+                            )));
+                        }
+                    };
+                    symbols.insert(label_name.to_owned(), value);
+                    continue;
+                }
+
                 if let Some(label_name) = label {
                     if symbols.contains_key(label_name) {
                         return Err(AssembleError::Parse(ParseError::new(
@@ -253,7 +288,7 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                     }
                     symbols.insert(label_name.to_owned(), memory.get_pc());
                 }
-                // Process directive
+
                 match dir.name {
                     Directive::Org => match dir.args.first() {
                         Some(Atom::Expr(n_or_sym)) => match n_or_sym {
@@ -275,18 +310,13 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                             )));
                         }
                     },
-                    Directive::Equ => {
-                        return Err(AssembleError::Parse(ParseError::new(
-                            "EQU directives require a symbol definition".to_string(),
-                            dir.span.to_owned(),
-                        )));
-                    }
                     Directive::Fcb => {
                         let size = dir.args.len() as u8;
                         memory.inc_pc(size).map_err(|_| {
                             dbg!(AssembleError::OverflowFromDirective(dir.to_owned()))
                         })?;
                     }
+                    Directive::Equ => unreachable!(),
                     Directive::Fcs => todo!(),
                     Directive::Rmb => todo!(),
                 }

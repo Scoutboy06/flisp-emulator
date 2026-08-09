@@ -48,6 +48,29 @@ fn undefined_symbol_error_uses_reference_span() {
 }
 
 #[test]
+fn equ_defines_a_constant_without_emitting_bytes() {
+    let memory = assemble(
+        "VALUE EQU $2A\nALIAS EQU VALUE\nORG $20\nLDA #ALIAS\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(memory[0x20], 0xf0);
+    assert_eq!(memory[0x21], 0x2a);
+    assert_eq!(memory[0], 0);
+}
+
+#[test]
+fn equ_requires_a_symbol_definition() {
+    let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
+    let AssembleError::Parse(error) = error else {
+        panic!("expected parse error");
+    };
+
+    assert_eq!(error.msg, "EQU directives require a symbol definition");
+}
+
+#[test]
 fn accepts_empty_lines() {
     let program = Parser::from_source("\n\nNOP\n\n").parse().unwrap();
 
