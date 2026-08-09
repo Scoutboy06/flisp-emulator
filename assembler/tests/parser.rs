@@ -1,4 +1,7 @@
-use assembler::parser::{AsmLine, Expression, Operand, Parser};
+use assembler::{
+    codegen::{AssembleError, assemble},
+    parser::{AsmLine, Expression, Operand, Parser},
+};
 
 #[test]
 fn parses_label_only_line() {
@@ -31,6 +34,17 @@ fn preserves_symbol_reference_spans() {
         [Operand::RelAdr(Expression::Symbol { name, span })]
             if name == "target" && span == &(4..10)
     ));
+}
+
+#[test]
+fn undefined_symbol_error_uses_reference_span() {
+    let error = assemble("BRA target\n", "test.sflisp".to_owned()).unwrap_err();
+    let AssembleError::Parse(error) = error else {
+        panic!("expected parse error");
+    };
+
+    assert_eq!(error.msg, "Undefined symbol: target");
+    assert_eq!(error.span, 4..10);
 }
 
 #[test]

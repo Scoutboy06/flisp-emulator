@@ -141,11 +141,11 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                                     AssembleError::OverflowFromInstruction(instr.to_owned())
                                 })?;
                             }
-                            Expression::Symbol { name: sym, .. } => {
+                            Expression::Symbol { name: sym, span } => {
                                 let val = symbols.get(sym.as_str()).ok_or_else(|| {
                                     AssembleError::Parse(ParseError::new(
                                         format!("Undefined symbol: {}", sym),
-                                        instr.span.to_owned(),
+                                        span.to_owned(),
                                     ))
                                 })?;
                                 memory.write_byte(*val).map_err(|_| {
@@ -161,11 +161,11 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                 Directive::Org => match dir.args.first() {
                     Some(Atom::Expr(n_or_sym)) => match n_or_sym {
                         Expression::Number { value: n, .. } => memory.set_pc(*n),
-                        Expression::Symbol { name: sym, .. } => {
+                        Expression::Symbol { name: sym, span } => {
                             let new_addr = symbols.get(sym).ok_or_else(|| {
                                 AssembleError::Parse(ParseError::new(
                                     format!("Undefined symbol: {}", sym),
-                                    dir.span,
+                                    span.to_owned(),
                                 ))
                             })?;
                             memory.set_pc(*new_addr);
@@ -187,11 +187,11 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                                         dbg!(AssembleError::OverflowFromDirective(dir.clone()))
                                     })?
                                 }
-                                Expression::Symbol { name: sym, .. } => {
+                                Expression::Symbol { name: sym, span } => {
                                     let val = symbols.get(sym.as_str()).ok_or_else(|| {
                                         AssembleError::Parse(ParseError::new(
                                             format!("Undefined symbol: {}", sym),
-                                            dir.span.clone(),
+                                            span.to_owned(),
                                         ))
                                     })?;
                                     memory.write_byte(*val).map_err(|_| {
@@ -258,11 +258,11 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                     Directive::Org => match dir.args.first() {
                         Some(Atom::Expr(n_or_sym)) => match n_or_sym {
                             Expression::Number { value: n, .. } => memory.set_pc(*n),
-                            Expression::Symbol { name: sym, .. } => {
+                            Expression::Symbol { name: sym, span } => {
                                 let new_addr = symbols.get(sym).ok_or_else(|| {
                                     AssembleError::Parse(ParseError::new(
                                         format!("Undefined symbol: {}", sym),
-                                        dir.span.to_owned(),
+                                        span.to_owned(),
                                     ))
                                 })?;
                                 memory.set_pc(*new_addr);
