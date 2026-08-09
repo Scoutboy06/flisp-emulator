@@ -9,12 +9,19 @@ pub fn make_test(src: &str) {
     let input_path = dir.join("test.sflisp");
     fs::write(&input_path, src).unwrap();
 
-    let output = Command::new("qaflisp")
+    let output = match Command::new("qaflisp")
         .arg("-L")
         .arg(&input_path)
         .current_dir(dir)
         .output()
-        .unwrap();
+    {
+        Ok(output) => output,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            eprintln!("skipping qaflisp comparison test: qaflisp is not installed");
+            return;
+        }
+        Err(err) => panic!("failed to run qaflisp: {err}"),
+    };
 
     if !output.status.success() {
         panic!(
