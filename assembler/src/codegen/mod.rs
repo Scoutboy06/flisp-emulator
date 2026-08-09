@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ops::Range};
 
-use ariadne::{Label, Report, ReportKind, Source};
+use ariadne::{Color, Label, Report, ReportKind, Source};
 use srec::{Address16, Data, Record};
 
 use crate::{
@@ -14,8 +14,16 @@ use crate::{
 #[derive(Debug)]
 pub enum AssembleError {
     Parse(ParseError),
+    CircularDefinition { edges: Vec<DependencyEdge> },
     OverflowFromInstruction(AsmInstruction),
     OverflowFromDirective(AsmDirective),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyEdge {
+    pub from: String,
+    pub to: String,
+    pub reference_span: Range<usize>,
 }
 
 impl AssembleError {
@@ -27,6 +35,40 @@ impl AssembleError {
     pub fn build_report<'a>(&'a self, file_name: &'a str) -> Report<'a, (&'a str, Range<usize>)> {
         match self {
             AssembleError::Parse(e) => e.build_report(file_name),
+            AssembleError::CircularDefinition { edges } => {
+                let closing = edges
+                    .last()
+                    .expect("a dependency cycle has at least one edge");
+                let mut report = Report::build(
+                    ReportKind::Error,
+                    (file_name, closing.reference_span.to_owned()),
+                )
+                .with_message("Circular symbol definition");
+
+                for (index, edge) in edges.iter().enumerate() {
+                    let closes_cycle = index + 1 == edges.len();
+                    let message = if closes_cycle {
+                        format!("{} depends on {}, completing the cycle", edge.from, edge.to)
+                    } else {
+                        format!("{} depends on {}", edge.from, edge.to)
+                    };
+                    report = report.with_label(
+                        Label::new((file_name, edge.reference_span.to_owned()))
+                            .with_color(if closes_cycle {
+                                Color::Red
+                            } else {
+                                Color::Yellow
+                            })
+                            .with_message(message),
+                    );
+                }
+
+                let mut path: Vec<&str> = edges.iter().map(|edge| edge.from.as_str()).collect();
+                path.push(closing.to.as_str());
+                report
+                    .with_note(format!("dependency cycle: {}", path.join(" -> ")))
+                    .finish()
+            }
             AssembleError::OverflowFromInstruction(ins) => {
                 Report::build(ReportKind::Error, (file_name, ins.span.to_owned()))
                     .with_message("Memory overflow occurred while assembling instruction")
@@ -212,109 +254,106 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
     Ok(*memory.get_data())
 }
 
+#[derive(Debug, Clone, Copy)]
+enum ResolutionState {
+    Resolving,
+    Resolved(u8),
+}
+
 fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleError> {
-    let mut symbols: HashMap<String, u8> = HashMap::new();
+    let mut definitions = HashMap::new();
+
+    // Constants are collected before layout so EQU aliases can refer forward.
+    for line in &ast.lines {
+        let AsmLine::Directive {
+            label,
+            dir:
+                AsmDirective {
+                    name: Directive::Equ,
+                    args,
+                    span,
+                },
+        } = line
+        else {
+            continue;
+        };
+
+        let name = label.as_ref().ok_or_else(|| {
+            AssembleError::Parse(ParseError::new(
+                "EQU directives require a symbol definition",
+                span.to_owned(),
+            ))
+        })?;
+        let expression = match args.first() {
+            Some(Atom::Expr(expression)) => expression.to_owned(),
+            _ => {
+                return Err(AssembleError::Parse(ParseError::new(
+                    "EQU directive requires a value",
+                    span.to_owned(),
+                )));
+            }
+        };
+        if definitions.insert(name.to_owned(), expression).is_some() {
+            return Err(AssembleError::Parse(ParseError::new(
+                format!("Duplicate symbol: {}", name),
+                span.to_owned(),
+            )));
+        }
+    }
+
+    let mut symbols = HashMap::new();
+    let mut states = HashMap::new();
     let mut memory = Memory::default();
 
     for line in &ast.lines {
         match line {
             AsmLine::Label { name, span } => {
-                if symbols.contains_key(name) {
-                    return Err(AssembleError::Parse(ParseError::new(
-                        format!("Duplicate symbol: {}", name),
-                        span.to_owned(),
-                    )));
-                }
-                symbols.insert(name.to_owned(), memory.get_pc());
+                define_address(&mut symbols, &definitions, name, memory.get_pc(), span)?;
             }
             AsmLine::Instruction { label, instr } => {
-                // Register label if present
-                if let Some(label_name) = label {
-                    if symbols.contains_key(label_name) {
-                        return Err(AssembleError::Parse(ParseError::new(
-                            format!("Duplicate symbol: {}", label_name),
-                            instr.span.to_owned(),
-                        )));
-                    }
-                    symbols.insert(label_name.to_owned(), memory.get_pc());
+                if let Some(name) = label {
+                    define_address(
+                        &mut symbols,
+                        &definitions,
+                        name,
+                        memory.get_pc(),
+                        &instr.span,
+                    )?;
                 }
-                // Advance memory for instruction
                 memory
                     .write_byte(instr.opcode)
                     .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
             }
+            AsmLine::Directive { label, dir } if dir.name == Directive::Equ => {}
             AsmLine::Directive { label, dir } => {
-                if dir.name == Directive::Equ {
-                    let label_name = label.as_ref().ok_or_else(|| {
-                        AssembleError::Parse(ParseError::new(
-                            "EQU directives require a symbol definition",
-                            dir.span.to_owned(),
-                        ))
-                    })?;
-                    if symbols.contains_key(label_name) {
-                        return Err(AssembleError::Parse(ParseError::new(
-                            format!("Duplicate symbol: {}", label_name),
-                            dir.span.to_owned(),
-                        )));
-                    }
-
-                    let value = match dir.args.first() {
-                        Some(Atom::Expr(Expression::Number { value, .. })) => *value,
-                        Some(Atom::Expr(Expression::Symbol { name, span })) => {
-                            *symbols.get(name).ok_or_else(|| {
-                                AssembleError::Parse(ParseError::new(
-                                    format!("Undefined symbol: {}", name),
-                                    span.to_owned(),
-                                ))
-                            })?
-                        }
-                        _ => {
-                            return Err(AssembleError::Parse(ParseError::new(
-                                "EQU directive requires a value",
-                                dir.span.to_owned(),
-                            )));
-                        }
-                    };
-                    symbols.insert(label_name.to_owned(), value);
-                    continue;
-                }
-
-                if let Some(label_name) = label {
-                    if symbols.contains_key(label_name) {
-                        return Err(AssembleError::Parse(ParseError::new(
-                            format!("Duplicate symbol: {}", label_name),
-                            dir.span.to_owned(),
-                        )));
-                    }
-                    symbols.insert(label_name.to_owned(), memory.get_pc());
+                if let Some(name) = label {
+                    define_address(&mut symbols, &definitions, name, memory.get_pc(), &dir.span)?;
                 }
 
                 match dir.name {
                     Directive::Org => match dir.args.first() {
-                        Some(Atom::Expr(n_or_sym)) => match n_or_sym {
-                            Expression::Number { value: n, .. } => memory.set_pc(*n),
-                            Expression::Symbol { name: sym, span } => {
-                                let new_addr = symbols.get(sym).ok_or_else(|| {
-                                    AssembleError::Parse(ParseError::new(
-                                        format!("Undefined symbol: {}", sym),
-                                        span.to_owned(),
-                                    ))
-                                })?;
-                                memory.set_pc(*new_addr);
-                            }
-                        },
+                        Some(Atom::Expr(expression)) => {
+                            let value = resolve_expression(
+                                expression,
+                                &definitions,
+                                &symbols,
+                                &mut states,
+                                &mut Vec::new(),
+                                &mut Vec::new(),
+                            )?;
+                            memory.set_pc(value);
+                        }
                         _ => {
                             return Err(AssembleError::Parse(ParseError::new(
-                                "ORG directive requires an address argument".to_string(),
+                                "ORG directive requires an address argument",
                                 dir.span.to_owned(),
                             )));
                         }
                     },
                     Directive::Fcb => {
-                        let size = dir.args.len() as u8;
-                        memory.inc_pc(size).map_err(|_| {
-                            dbg!(AssembleError::OverflowFromDirective(dir.to_owned()))
-                        })?;
+                        memory
+                            .inc_pc(dir.args.len() as u8)
+                            .map_err(|_| AssembleError::OverflowFromDirective(dir.to_owned()))?;
                     }
                     Directive::Equ => unreachable!(),
                     Directive::Fcs => todo!(),
@@ -324,7 +363,111 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
         }
     }
 
+    let mut definition_names: Vec<_> = definitions.keys().cloned().collect();
+    definition_names.sort();
+    for name in definition_names {
+        let value = resolve_symbol(
+            &name,
+            &definitions,
+            &symbols,
+            &mut states,
+            &mut Vec::new(),
+            &mut Vec::new(),
+        )?;
+        symbols.insert(name, value);
+    }
+
     Ok(symbols)
+}
+
+fn define_address(
+    symbols: &mut HashMap<String, u8>,
+    definitions: &HashMap<String, Expression>,
+    name: &str,
+    address: u8,
+    span: &Range<usize>,
+) -> Result<(), AssembleError> {
+    if symbols.contains_key(name) || definitions.contains_key(name) {
+        return Err(AssembleError::Parse(ParseError::new(
+            format!("Duplicate symbol: {}", name),
+            span.to_owned(),
+        )));
+    }
+    symbols.insert(name.to_owned(), address);
+    Ok(())
+}
+
+fn resolve_expression(
+    expression: &Expression,
+    definitions: &HashMap<String, Expression>,
+    addresses: &HashMap<String, u8>,
+    states: &mut HashMap<String, ResolutionState>,
+    path: &mut Vec<String>,
+    edges: &mut Vec<DependencyEdge>,
+) -> Result<u8, AssembleError> {
+    match expression {
+        Expression::Number { value, .. } => Ok(*value),
+        Expression::Symbol { name, span } => {
+            if let Some(value) = addresses.get(name) {
+                return Ok(*value);
+            }
+            if !definitions.contains_key(name) {
+                return Err(AssembleError::Parse(ParseError::new(
+                    format!("Undefined symbol: {}", name),
+                    span.to_owned(),
+                )));
+            }
+            resolve_symbol(name, definitions, addresses, states, path, edges)
+        }
+    }
+}
+
+fn resolve_symbol(
+    name: &str,
+    definitions: &HashMap<String, Expression>,
+    addresses: &HashMap<String, u8>,
+    states: &mut HashMap<String, ResolutionState>,
+    path: &mut Vec<String>,
+    edges: &mut Vec<DependencyEdge>,
+) -> Result<u8, AssembleError> {
+    match states.get(name) {
+        Some(ResolutionState::Resolved(value)) => return Ok(*value),
+        Some(ResolutionState::Resolving) => {
+            let cycle_start = edges.iter().position(|edge| edge.from == name).unwrap_or(0);
+            return Err(AssembleError::CircularDefinition {
+                edges: edges[cycle_start..].to_vec(),
+            });
+        }
+        None => {}
+    }
+
+    states.insert(name.to_owned(), ResolutionState::Resolving);
+    path.push(name.to_owned());
+
+    let expression = definitions
+        .get(name)
+        .expect("only defined constants are resolved");
+    let value = match expression {
+        Expression::Number { value, .. } => *value,
+        Expression::Symbol {
+            name: dependency,
+            span,
+        } => {
+            edges.push(DependencyEdge {
+                from: name.to_owned(),
+                to: dependency.to_owned(),
+                reference_span: span.to_owned(),
+            });
+            let value =
+                resolve_expression(expression, definitions, addresses, states, path, edges)?;
+            edges.pop();
+            value
+        }
+    };
+
+    path.pop();
+    states.insert(name.to_owned(), ResolutionState::Resolved(value));
+    Ok(value)
 }
 
 pub fn emit_s19(mem: &[u8; 256]) -> String {

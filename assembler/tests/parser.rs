@@ -1,5 +1,6 @@
+use ariadne::Source;
 use assembler::{
-    codegen::{AssembleError, assemble},
+    codegen::{AssembleError, DependencyEdge, assemble},
     parser::{AsmLine, Expression, Operand, Parser},
 };
 
@@ -58,6 +59,59 @@ fn equ_defines_a_constant_without_emitting_bytes() {
     assert_eq!(memory[0x20], 0xf0);
     assert_eq!(memory[0x21], 0x2a);
     assert_eq!(memory[0], 0);
+}
+
+#[test]
+fn equ_supports_forward_aliases() {
+    let memory = assemble(
+        "FIRST EQU SECOND\nSECOND EQU $2A\nORG $20\nLDA #FIRST\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(&memory[0x20..=0x21], &[0xf0, 0x2a]);
+}
+
+#[test]
+fn reports_and_visualizes_circular_equ_definitions() {
+    let source = "A EQU B\nB EQU C\nC EQU A\n";
+    let error = assemble(source, "test.sflisp".to_owned()).unwrap_err();
+    let AssembleError::CircularDefinition { edges } = &error else {
+        panic!("expected circular definition error, got {error:?}");
+    };
+
+    assert_eq!(
+        edges,
+        &[
+            DependencyEdge {
+                from: "A".to_owned(),
+                to: "B".to_owned(),
+                reference_span: 6..7,
+            },
+            DependencyEdge {
+                from: "B".to_owned(),
+                to: "C".to_owned(),
+                reference_span: 14..15,
+            },
+            DependencyEdge {
+                from: "C".to_owned(),
+                to: "A".to_owned(),
+                reference_span: 22..23,
+            },
+        ]
+    );
+
+    let mut rendered = Vec::new();
+    error
+        .build_report("test.sflisp")
+        .write(("test.sflisp", Source::from(source)), &mut rendered)
+        .unwrap();
+    let rendered = String::from_utf8(rendered).unwrap();
+    assert!(rendered.contains("Circular symbol definition"));
+    assert!(rendered.contains("A depends on B"));
+    assert!(rendered.contains("B depends on C"));
+    assert!(rendered.contains("C depends on A, completing the cycle"));
+    assert!(rendered.contains("dependency cycle: A -> B -> C -> A"));
 }
 
 #[test]
