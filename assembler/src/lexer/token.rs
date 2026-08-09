@@ -1,9 +1,5 @@
 use std::ops::Range;
 
-use crate::lexer::{
-    directive::Directive, instruction::Instruction, named_literal::NamedLiteral, symbol::Symbol,
-};
-
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct Token {
     pub kind: TokenKind,
@@ -27,10 +23,7 @@ pub enum TokenKind {
     Invalid,
     Eof,
     Newline,
-    Directive,
-    Sym,
-    Instruction,
-    NamedLiteral,
+    Identifier,
     NumberLiteral,
     ImmediatePrefix,
     Colon,
@@ -42,39 +35,15 @@ pub enum TokenKind {
 pub enum TokenValue {
     #[default]
     Empty,
-    Directive(Directive),
-    Sym(Symbol),
-    Instruction(Instruction),
-    NamedLiteral(NamedLiteral),
+    Identifier(String),
     NumberLiteral(u8),
 }
 
 impl TokenValue {
-    pub fn expect_directive(&self) -> Directive {
+    pub fn expect_identifier(&self) -> &str {
         match self {
-            TokenValue::Directive(directive) => *directive,
-            _ => panic!("Expected Directive token value"),
-        }
-    }
-
-    pub fn expect_sym(&self) -> &Symbol {
-        match self {
-            TokenValue::Sym(symbol) => symbol,
-            _ => panic!("Expected"),
-        }
-    }
-
-    pub fn expect_instruction(&self) -> Instruction {
-        match self {
-            TokenValue::Instruction(instruction) => *instruction,
-            _ => panic!("Expected Instruction token value"),
-        }
-    }
-
-    pub fn expect_named_literal(&self) -> NamedLiteral {
-        match self {
-            TokenValue::NamedLiteral(named_literal) => *named_literal,
-            _ => panic!("Expected NamedLiteral token value"),
+            TokenValue::Identifier(identifier) => identifier,
+            _ => panic!("Expected identifier token value"),
         }
     }
 

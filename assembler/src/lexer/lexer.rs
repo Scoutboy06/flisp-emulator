@@ -1,12 +1,6 @@
 use std::{collections::VecDeque, str::Bytes};
 
-use crate::lexer::{
-    directive::parse_directive,
-    instruction::parse_instruction,
-    named_literal::parse_named_literal,
-    symbol::Symbol,
-    token::{Token, TokenKind, TokenValue},
-};
+use crate::lexer::token::{Token, TokenKind, TokenValue};
 
 pub struct Lexer<'a> {
     bytes: Bytes<'a>,
@@ -77,15 +71,7 @@ impl<'a> Lexer<'a> {
             }
             b'A'..=b'Z' | b'a'..=b'z' => {
                 let id = self.collect_identifier();
-                if let Some(instr) = parse_instruction(&id) {
-                    (TK::Instruction, TV::Instruction(instr))
-                } else if let Some(lit) = parse_named_literal(&id) {
-                    (TK::NamedLiteral, TV::NamedLiteral(lit))
-                } else if let Some(dir) = parse_directive(&id) {
-                    (TK::Directive, TV::Directive(dir))
-                } else {
-                    (TK::Sym, TV::Sym(Symbol(id)))
-                }
+                (TK::Identifier, TV::Identifier(id))
             }
             b'0'..=b'9' | b'$' | b'%' => {
                 (TK::NumberLiteral, TV::NumberLiteral(self.parse_number()))

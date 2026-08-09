@@ -4,8 +4,9 @@ use ariadne::{Label, Report, ReportKind, Source};
 
 use crate::lexer::{
     Lexer, NamedLiteral,
-    directive::Directive,
-    instruction::Instruction,
+    directive::{Directive, parse_directive as identify_directive},
+    instruction::{Instruction, parse_instruction as identify_instruction},
+    parse_named_literal,
     token::{Token, TokenKind},
 };
 
@@ -191,41 +192,45 @@ impl<'a> Parser<'a> {
                 break;
             }
 
-            // Try to parse an optional label
-            let label = if self.curr().kind == TK::Sym {
-                let name = self.curr().value.expect_sym();
-                let label_name = name.0.to_owned();
-                self.advance();
-
-                if self.curr().kind == TK::Colon {
+            // An identifier that is not a known instruction or directive starts a label.
+            let label = if self.curr().kind == TK::Identifier {
+                let name = self.curr().value.expect_identifier();
+                if identify_instruction(name).is_none() && identify_directive(name).is_none() {
+                    let label_name = name.to_owned();
                     self.advance();
-                }
 
-                Some(label_name)
+                    if self.curr().kind == TK::Colon {
+                        self.advance();
+                    }
+
+                    Some(label_name)
+                } else {
+                    None
+                }
             } else {
                 None
             };
 
-            // Parse instruction or directive with the optional label
-            match self.curr().kind {
-                TK::Instruction => {
-                    let instr = self.parse_instruction()?;
-                    lines.push(AsmLine::Instruction { label, instr });
-                }
-                TK::Directive => {
-                    let dir = self.parse_directive()?;
-                    lines.push(AsmLine::Directive { label, dir });
-                }
-                TK::Eof => break,
-                _ => {
-                    return Err(self.err(
-                        format!(
-                            "Expected instruction or directive, got {:?}",
-                            self.curr().kind
-                        ),
-                        self.curr_span(),
-                    ));
-                }
+            // Parse instruction or directive with the optional label.
+            let identifier = if self.curr().kind == TK::Identifier {
+                Some(self.curr().value.expect_identifier())
+            } else {
+                None
+            };
+
+            if identifier.and_then(identify_instruction).is_some() {
+                let instr = self.parse_instruction()?;
+                lines.push(AsmLine::Instruction { label, instr });
+            } else if identifier.and_then(identify_directive).is_some() {
+                let dir = self.parse_directive()?;
+                lines.push(AsmLine::Directive { label, dir });
+            } else if self.curr().kind == TK::Eof {
+                break;
+            } else {
+                return Err(self.err(
+                    "Expected instruction or directive".to_owned(),
+                    self.curr_span(),
+                ));
             }
         }
 
@@ -234,12 +239,13 @@ impl<'a> Parser<'a> {
 
     fn parse_directive(&mut self) -> Result<AsmDirective, ParseError> {
         let start_pos = self.curr().span.start;
-        match self.curr().value.expect_directive() {
+        let name = self.curr().value.expect_identifier();
+        match identify_directive(name).expect("directive checked before parsing") {
             Directive::Org => {
                 self.advance();
                 let span = start_pos..self.curr().span.end;
                 match self.curr().kind {
-                    TokenKind::NumberLiteral | TokenKind::Sym => Ok(AsmDirective {
+                    TokenKind::NumberLiteral | TokenKind::Identifier => Ok(AsmDirective {
                         span,
                         name: Directive::Org,
                         args: vec![self.parse_atom().unwrap()],
@@ -249,7 +255,10 @@ impl<'a> Parser<'a> {
             }
             Directive::Equ => {
                 self.advance();
-                if matches!(self.curr().kind, TokenKind::NumberLiteral | TokenKind::Sym) {
+                if matches!(
+                    self.curr().kind,
+                    TokenKind::NumberLiteral | TokenKind::Identifier
+                ) {
                     let span = start_pos..self.curr().span.end;
                     Ok(AsmDirective {
                         span,
@@ -267,7 +276,7 @@ impl<'a> Parser<'a> {
                 self.advance();
                 let mut args: Vec<Atom> = Vec::new();
 
-                while let TokenKind::NumberLiteral | TokenKind::Sym = self.curr().kind {
+                while let TokenKind::NumberLiteral | TokenKind::Identifier = self.curr().kind {
                     args.push(self.parse_atom()?);
 
                     if self.curr().kind == TokenKind::Comma {
@@ -290,7 +299,8 @@ impl<'a> Parser<'a> {
 
     fn parse_instruction(&mut self) -> Result<AsmInstruction, ParseError> {
         let start = self.curr().span.start;
-        let ins = self.curr().value.expect_instruction();
+        let name = self.curr().value.expect_identifier();
+        let ins = identify_instruction(name).expect("instruction checked before parsing");
         self.advance(); // Consume instruction token
         let ops = self.parse_operands()?;
         let end = self.prev().span.end;
@@ -860,7 +870,7 @@ impl<'a> Parser<'a> {
                 let op1 = self.parse_atom()?;
                 Ok(OperandForm::Imm1(op1))
             }
-            TK::NamedLiteral | TK::NumberLiteral | TK::Sym => {
+            TK::Identifier | TK::NumberLiteral => {
                 let op1 = self.parse_atom()?;
                 match self.curr().kind {
                     TK::Comma => {
@@ -882,17 +892,17 @@ impl<'a> Parser<'a> {
 
     fn parse_atom(&mut self) -> Result<Atom, ParseError> {
         let val = match self.curr().kind {
-            TokenKind::NamedLiteral => {
-                let name_lit = self.curr().value.expect_named_literal();
-                Ok(Atom::Reg(name_lit))
-            }
             TokenKind::NumberLiteral => {
                 let num_lit = self.curr().value.expect_number_literal();
                 Ok(Atom::NumOrSym(NumOrSym::Num(num_lit)))
             }
-            TokenKind::Sym => {
-                let sym = self.curr().value.expect_sym();
-                Ok(Atom::NumOrSym(NumOrSym::Sym(sym.0.to_owned())))
+            TokenKind::Identifier => {
+                let identifier = self.curr().value.expect_identifier();
+                if let Some(register) = parse_named_literal(identifier) {
+                    Ok(Atom::Reg(register))
+                } else {
+                    Ok(Atom::NumOrSym(NumOrSym::Sym(identifier.to_owned())))
+                }
             }
             _ => Err(self.err("Expected operand".to_string(), self.curr_span())),
         }?;
