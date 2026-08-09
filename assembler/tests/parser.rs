@@ -135,6 +135,24 @@ fn branches_encode_targets_relative_to_the_next_instruction() {
 }
 
 #[test]
+fn branch_aliases_use_their_canonical_opcodes() {
+    let memory = assemble(
+        "ORG $20\nBHS target\nBLO target\ntarget: NOP\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        &memory[0x20..=0x24],
+        &[
+            0x29, 0x02, // BHS is BCC
+            0x28, 0x00, // BLO is BCS
+            0x00,
+        ]
+    );
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
