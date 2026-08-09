@@ -1,4 +1,4 @@
-use assembler::parser::{AsmLine, Parser};
+use assembler::parser::{AsmLine, Expression, Operand, Parser};
 
 #[test]
 fn parses_label_only_line() {
@@ -17,6 +17,20 @@ fn rejects_trailing_tokens_on_a_statement() {
         .unwrap_err();
 
     assert_eq!(error.msg, "Expected end of line");
+}
+
+#[test]
+fn preserves_symbol_reference_spans() {
+    let program = Parser::from_source("BRA target\n").parse().unwrap();
+    let AsmLine::Instruction { instr, .. } = &program.lines[0] else {
+        panic!("expected instruction");
+    };
+
+    assert!(matches!(
+        &instr.operands[..],
+        [Operand::RelAdr(Expression::Symbol { name, span })]
+            if name == "target" && span == &(4..10)
+    ));
 }
 
 #[test]

@@ -6,7 +6,7 @@ use srec::{Address16, Data, Record};
 use crate::{
     lexer::directive::Directive,
     parser::{
-        AsmDirective, AsmInstruction, AsmLine, Atom, NumOrSym, Operand, ParseError, Parser,
+        AsmDirective, AsmInstruction, AsmLine, Atom, Expression, Operand, ParseError, Parser,
         ProgramAST,
     },
 };
@@ -136,12 +136,12 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                         | Operand::AbsAdr(val)
                         | Operand::RelAdr(val)
                         | Operand::N(val) => match val {
-                            NumOrSym::Num(n) => {
+                            Expression::Number { value: n, .. } => {
                                 memory.write_byte(*n).map_err(|_| {
                                     AssembleError::OverflowFromInstruction(instr.to_owned())
                                 })?;
                             }
-                            NumOrSym::Sym(sym) => {
+                            Expression::Symbol { name: sym, .. } => {
                                 let val = symbols.get(sym.as_str()).ok_or_else(|| {
                                     AssembleError::Parse(ParseError::new(
                                         format!("Undefined symbol: {}", sym),
@@ -159,9 +159,9 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
             }
             AsmLine::Directive { label: _, dir } => match dir.name {
                 Directive::Org => match dir.args.first() {
-                    Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
-                        NumOrSym::Num(n) => memory.set_pc(*n),
-                        NumOrSym::Sym(sym) => {
+                    Some(Atom::Expr(n_or_sym)) => match n_or_sym {
+                        Expression::Number { value: n, .. } => memory.set_pc(*n),
+                        Expression::Symbol { name: sym, .. } => {
                             let new_addr = symbols.get(sym).ok_or_else(|| {
                                 AssembleError::Parse(ParseError::new(
                                     format!("Undefined symbol: {}", sym),
@@ -181,11 +181,13 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                 Directive::Fcb => {
                     for arg in dir.args.iter() {
                         match arg {
-                            Atom::NumOrSym(n_or_sym) => match n_or_sym {
-                                NumOrSym::Num(n) => memory.write_byte(*n).map_err(|_| {
-                                    dbg!(AssembleError::OverflowFromDirective(dir.clone()))
-                                })?,
-                                NumOrSym::Sym(sym) => {
+                            Atom::Expr(n_or_sym) => match n_or_sym {
+                                Expression::Number { value: n, .. } => {
+                                    memory.write_byte(*n).map_err(|_| {
+                                        dbg!(AssembleError::OverflowFromDirective(dir.clone()))
+                                    })?
+                                }
+                                Expression::Symbol { name: sym, .. } => {
                                     let val = symbols.get(sym.as_str()).ok_or_else(|| {
                                         AssembleError::Parse(ParseError::new(
                                             format!("Undefined symbol: {}", sym),
@@ -254,9 +256,9 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                 // Process directive
                 match dir.name {
                     Directive::Org => match dir.args.first() {
-                        Some(Atom::NumOrSym(n_or_sym)) => match n_or_sym {
-                            NumOrSym::Num(n) => memory.set_pc(*n),
-                            NumOrSym::Sym(sym) => {
+                        Some(Atom::Expr(n_or_sym)) => match n_or_sym {
+                            Expression::Number { value: n, .. } => memory.set_pc(*n),
+                            Expression::Symbol { name: sym, .. } => {
                                 let new_addr = symbols.get(sym).ok_or_else(|| {
                                     AssembleError::Parse(ParseError::new(
                                         format!("Undefined symbol: {}", sym),

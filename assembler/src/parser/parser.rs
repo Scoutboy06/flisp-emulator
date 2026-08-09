@@ -2,7 +2,7 @@ use std::ops::Range;
 
 use super::{
     instruction_selection::{Operand, select_instruction},
-    syntax::{Atom, NumOrSym, OperandForm},
+    syntax::{Atom, Expression, OperandForm},
 };
 
 use ariadne::{Label, Report, ReportKind, Source};
@@ -330,17 +330,21 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_atom(&mut self) -> Result<Atom, ParseError> {
+        let span = self.curr_span();
         let val = match self.curr().kind {
             TokenKind::NumberLiteral => {
-                let num_lit = self.curr().value.expect_number_literal();
-                Ok(Atom::NumOrSym(NumOrSym::Num(num_lit)))
+                let value = self.curr().value.expect_number_literal();
+                Ok(Atom::Expr(Expression::Number { value, span }))
             }
             TokenKind::Identifier => {
                 let identifier = self.curr().value.expect_identifier();
                 if let Some(register) = parse_named_literal(identifier) {
                     Ok(Atom::Reg(register))
                 } else {
-                    Ok(Atom::NumOrSym(NumOrSym::Sym(identifier.to_owned())))
+                    Ok(Atom::Expr(Expression::Symbol {
+                        name: identifier.to_owned(),
+                        span,
+                    }))
                 }
             }
             _ => Err(self.err("Expected operand".to_string(), self.curr_span())),

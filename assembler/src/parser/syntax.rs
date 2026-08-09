@@ -1,17 +1,27 @@
+use std::ops::Range;
+
 use crate::lexer::NamedLiteral;
 
 #[derive(Debug, Clone)]
 pub enum Atom {
-    NumOrSym(NumOrSym),
+    Expr(Expression),
     Reg(NamedLiteral),
     String(String),
     None,
 }
 
 #[derive(Debug, Clone)]
-pub enum NumOrSym {
-    Num(u8),
-    Sym(String),
+pub enum Expression {
+    Number { value: u8, span: Range<usize> },
+    Symbol { name: String, span: Range<usize> },
+}
+
+impl Expression {
+    pub fn span(&self) -> &Range<usize> {
+        match self {
+            Self::Number { span, .. } | Self::Symbol { span, .. } => span,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

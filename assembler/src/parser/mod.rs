@@ -6,4 +6,4 @@ mod syntax;
 pub use parser::*;
 
 pub use instruction_selection::Operand;
-pub use syntax::{Atom, NumOrSym};
+pub use syntax::{Atom, Expression};
