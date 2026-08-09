@@ -321,7 +321,7 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                     )?;
                 }
                 memory
-                    .write_byte(instr.opcode)
+                    .inc_pc(instr.size())
                     .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
             }
             AsmLine::Directive { label, dir } if dir.name == Directive::Equ => {}
