@@ -91,9 +91,26 @@ impl AssembleError {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct AssemblyOutput {
+    memory: [u8; 256],
+    initialized: [bool; 256],
+}
+
+impl AssemblyOutput {
+    pub fn memory(&self) -> &[u8; 256] {
+        &self.memory
+    }
+
+    pub fn initialized(&self) -> &[bool; 256] {
+        &self.initialized
+    }
+}
+
 #[derive(Debug)]
 pub struct Memory {
     data: [u8; 256],
+    initialized: [bool; 256],
     pc: u16,
 }
 
@@ -107,6 +124,7 @@ impl Default for Memory {
     fn default() -> Self {
         Memory {
             data: [0u8; 256],
+            initialized: [false; 256],
             pc: 0,
         }
     }
@@ -119,6 +137,7 @@ impl Memory {
             return Err(MemoryError::OutOfBounds(addr));
         }
         self.data[addr] = byte;
+        self.initialized[addr] = true;
 
         // Update the program counter and check for overflow
         let (new_pc, overflow) = self.pc.overflowing_add(1);
@@ -150,12 +169,15 @@ impl Memory {
         Ok(())
     }
 
-    pub fn get_data(&self) -> &[u8; 256] {
-        &self.data
+    pub fn into_output(self) -> AssemblyOutput {
+        AssemblyOutput {
+            memory: self.data,
+            initialized: self.initialized,
+        }
     }
 }
 
-pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError> {
+pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, AssembleError> {
     let ast = Parser::from_source(src)
         .with_source_name(file_path)
         .parse()
@@ -246,7 +268,7 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
         }
     }
 
-    Ok(*memory.get_data())
+    Ok(memory.into_output())
 }
 
 fn resolve_emitted_expression(
@@ -480,50 +502,30 @@ fn resolve_symbol(
     Ok(value)
 }
 
-pub fn emit_s19(mem: &[u8; 256]) -> String {
-    // Each record holds up to 30 bytes of equential data.
-    //
-    // If there are gaps in the memory (2 or more null bytes in row),
-    // separate records are created.
-    //
-    // A separate S9 record is created for the start address stored at
-    // memory location 0xFF, even if that memory is set via a S1 record already.
+pub fn emit_s19(output: &AssemblyOutput) -> String {
+    // Each record holds up to 30 contiguous, explicitly initialized bytes.
+    let mut records = Vec::new();
+    let mut addr = 0usize;
 
-    let mut records: Vec<Record> = Vec::new();
-
-    let mut null_count = 0;
-    let mut seq_start: Option<u8> = None;
-    for addr in 0..=255_u8 {
-        let byte = mem[addr as usize];
-        if byte == 0 {
-            null_count += 1;
-            if null_count == 2 {
-                // End of a sequential data block
-                if let Some(start) = seq_start {
-                    let end = addr - 2;
-                    records.push(create_s1_record(mem, start, end));
-                    seq_start = None;
-                }
-            }
-        } else {
-            if null_count >= 2 || seq_start.is_none() {
-                // Start of a new sequential data block
-                seq_start = Some(addr);
-            } else if seq_start.is_some_and(|s| addr - s == 30) {
-                let start = seq_start.unwrap();
-                records.push(create_s1_record(mem, start, addr - 1));
-                seq_start = Some(addr);
-            }
-            null_count = 0;
+    while addr < output.memory.len() {
+        if !output.initialized[addr] {
+            addr += 1;
+            continue;
         }
+
+        let start = addr;
+        while addr < output.memory.len() && output.initialized[addr] && addr - start < 30 {
+            addr += 1;
+        }
+        records.push(create_s1_record(
+            &output.memory,
+            start as u8,
+            (addr - 1) as u8,
+        ));
     }
 
-    if let Some(start) = seq_start {
-        let end = 255_u8;
-        records.push(create_s1_record(mem, start, end));
-    }
-
-    let start_addr = mem[255];
+    // FLISP stores its reset address at the final memory location.
+    let start_addr = output.memory[255];
     if start_addr != 0 {
         records.push(Record::S9(Address16(start_addr as u16)));
     }
@@ -539,11 +541,11 @@ fn create_s1_record(mem: &[u8; 256], start: u8, end: u8) -> Record {
     })
 }
 
-pub fn emit_fmem(mem: &[u8; 256], file_name: &str) -> String {
+pub fn emit_fmem(output: &AssemblyOutput, file_name: &str) -> String {
     let mut out = format!("File: {file_name}\n\n # ClearAllMemory\n # ClearAllRegisters");
 
-    for (adr, byte) in mem.iter().enumerate() {
-        if *byte != 0 {
+    for (adr, byte) in output.memory.iter().enumerate() {
+        if output.initialized[adr] {
             out.push_str(&format!("\n #setMemory  {:02X}={:02X}", adr, byte))
         }
     }

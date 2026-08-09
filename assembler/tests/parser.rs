@@ -1,6 +1,6 @@
 use ariadne::Source;
 use assembler::{
-    codegen::{AssembleError, DependencyEdge, assemble},
+    codegen::{AssembleError, DependencyEdge, assemble, emit_fmem, emit_s19},
     parser::{AsmLine, Expression, Operand, Parser},
 };
 
@@ -56,9 +56,9 @@ fn equ_defines_a_constant_without_emitting_bytes() {
     )
     .unwrap();
 
-    assert_eq!(memory[0x20], 0xf0);
-    assert_eq!(memory[0x21], 0x2a);
-    assert_eq!(memory[0], 0);
+    assert_eq!(memory.memory()[0x20], 0xf0);
+    assert_eq!(memory.memory()[0x21], 0x2a);
+    assert_eq!(memory.memory()[0], 0);
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn equ_supports_forward_aliases() {
     )
     .unwrap();
 
-    assert_eq!(&memory[0x20..=0x21], &[0xf0, 0x2a]);
+    assert_eq!(&memory.memory()[0x20..=0x21], &[0xf0, 0x2a]);
 }
 
 #[test]
@@ -123,7 +123,7 @@ fn branches_encode_targets_relative_to_the_next_instruction() {
     .unwrap();
 
     assert_eq!(
-        &memory[0x20..=0x28],
+        &memory.memory()[0x20..=0x28],
         &[
             0x21, 0x01, // Forward: $23 - $22
             0x00, // NOP
@@ -143,13 +143,34 @@ fn branch_aliases_use_their_canonical_opcodes() {
     .unwrap();
 
     assert_eq!(
-        &memory[0x20..=0x24],
+        &memory.memory()[0x20..=0x24],
         &[
             0x29, 0x02, // BHS is BCC
             0x28, 0x00, // BLO is BCS
             0x00,
         ]
     );
+}
+
+#[test]
+fn output_preserves_explicitly_initialized_zeroes() {
+    let output = assemble(
+        "ORG $20\nFCB $AA\nORG $30\nFCB $00,$00,$BB\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert!(output.initialized()[0x20]);
+    assert!(!output.initialized()[0x21]);
+    assert_eq!(&output.memory()[0x30..=0x32], &[0x00, 0x00, 0xbb]);
+    assert!(output.initialized()[0x30..=0x32].iter().all(|value| *value));
+
+    let s19 = emit_s19(&output);
+    assert!(s19.lines().any(|line| line.starts_with("S10600300000BB")));
+
+    let fmem = emit_fmem(&output, "test.fmem");
+    assert!(fmem.contains("#setMemory  30=00"));
+    assert!(fmem.contains("#setMemory  31=00"));
 }
 
 #[test]
