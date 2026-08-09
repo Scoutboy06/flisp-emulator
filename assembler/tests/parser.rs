@@ -115,6 +115,26 @@ fn reports_and_visualizes_circular_equ_definitions() {
 }
 
 #[test]
+fn branches_encode_targets_relative_to_the_next_instruction() {
+    let memory = assemble(
+        "ORG $20\nstart: BRA forward\nNOP\nforward: BRA start\nBRA $30\nJMP $30\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(
+        &memory[0x20..=0x28],
+        &[
+            0x21, 0x01, // Forward: $23 - $22
+            0x00, // NOP
+            0x21, 0xfb, // Backward: $20 - $25, modulo 256
+            0x21, 0x09, // Numeric target: $30 - $27
+            0x33, 0x30, // JMP remains an absolute address
+        ]
+    );
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {

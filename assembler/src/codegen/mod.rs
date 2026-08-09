@@ -174,27 +174,22 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
                     .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
                 for operand in instr.operands.iter() {
                     match operand {
-                        Operand::Imm(val)
-                        | Operand::AbsAdr(val)
-                        | Operand::RelAdr(val)
-                        | Operand::N(val) => match val {
-                            Expression::Number { value: n, .. } => {
-                                memory.write_byte(*n).map_err(|_| {
-                                    AssembleError::OverflowFromInstruction(instr.to_owned())
-                                })?;
-                            }
-                            Expression::Symbol { name: sym, span } => {
-                                let val = symbols.get(sym.as_str()).ok_or_else(|| {
-                                    AssembleError::Parse(ParseError::new(
-                                        format!("Undefined symbol: {}", sym),
-                                        span.to_owned(),
-                                    ))
-                                })?;
-                                memory.write_byte(*val).map_err(|_| {
-                                    AssembleError::OverflowFromInstruction(instr.to_owned())
-                                })?;
-                            }
-                        },
+                        Operand::RelAdr(expression) => {
+                            let target = resolve_emitted_expression(expression, &symbols)?;
+                            let next_instruction = memory.get_pc().wrapping_add(1);
+                            let offset = target.wrapping_sub(next_instruction);
+                            memory.write_byte(offset).map_err(|_| {
+                                AssembleError::OverflowFromInstruction(instr.to_owned())
+                            })?;
+                        }
+                        Operand::Imm(expression)
+                        | Operand::AbsAdr(expression)
+                        | Operand::N(expression) => {
+                            let value = resolve_emitted_expression(expression, &symbols)?;
+                            memory.write_byte(value).map_err(|_| {
+                                AssembleError::OverflowFromInstruction(instr.to_owned())
+                            })?;
+                        }
                         Operand::Reg(_) => { /* Not written to memory */ }
                     }
                 }
@@ -252,6 +247,21 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
     }
 
     Ok(*memory.get_data())
+}
+
+fn resolve_emitted_expression(
+    expression: &Expression,
+    symbols: &HashMap<String, u8>,
+) -> Result<u8, AssembleError> {
+    match expression {
+        Expression::Number { value, .. } => Ok(*value),
+        Expression::Symbol { name, span } => symbols.get(name).copied().ok_or_else(|| {
+            AssembleError::Parse(ParseError::new(
+                format!("Undefined symbol: {}", name),
+                span.to_owned(),
+            ))
+        }),
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
