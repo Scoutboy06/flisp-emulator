@@ -26,6 +26,7 @@ pub enum TokenKind {
     #[default]
     Invalid,
     Eof,
+    Newline,
     Directive,
     Sym,
     Instruction,

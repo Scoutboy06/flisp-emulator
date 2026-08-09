@@ -49,8 +49,8 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn skip_whitespace(&mut self) {
-        while self.curr.is_some_and(|b| b.is_ascii_whitespace()) {
+    fn skip_horizontal_whitespace(&mut self) {
+        while matches!(self.curr, Some(b' ' | b'\t' | b'\r')) {
             self.advance();
         }
     }
@@ -58,7 +58,7 @@ impl<'a> Lexer<'a> {
     fn lex_next_token(&mut self) -> Token {
         use TokenKind as TK;
         use TokenValue as TV;
-        self.skip_whitespace();
+        self.skip_horizontal_whitespace();
 
         if self.curr.is_none() {
             return Token::eof(self.pos);
@@ -67,6 +67,10 @@ impl<'a> Lexer<'a> {
         let start = self.pos;
 
         let (token_kind, token_value) = match self.curr.unwrap() {
+            b'\n' => {
+                self.advance();
+                (TK::Newline, TV::Empty)
+            }
             b'#' => {
                 self.advance();
                 (TK::ImmediatePrefix, TV::Empty)
@@ -87,10 +91,9 @@ impl<'a> Lexer<'a> {
                 (TK::NumberLiteral, TV::NumberLiteral(self.parse_number()))
             }
             b';' => {
-                while self.curr != Some(b'\n') {
+                while self.curr.is_some() && self.curr != Some(b'\n') {
                     self.advance();
                 }
-                self.advance(); // Skip \n
                 (TK::Comment, TV::Empty)
             }
             b':' => {

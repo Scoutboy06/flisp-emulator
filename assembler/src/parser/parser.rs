@@ -184,6 +184,13 @@ impl<'a> Parser<'a> {
 
         use TokenKind as TK;
         while self.curr().kind != TK::Eof {
+            while self.curr().kind == TK::Newline {
+                self.advance();
+            }
+            if self.curr().kind == TK::Eof {
+                break;
+            }
+
             // Try to parse an optional label
             let label = if self.curr().kind == TK::Sym {
                 let name = self.curr().value.expect_sym();
