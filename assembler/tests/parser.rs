@@ -74,7 +74,7 @@ fn equ_supports_forward_aliases() {
 
 #[test]
 fn reports_and_visualizes_circular_equ_definitions() {
-    let source = "A EQU B\nB EQU C\nC EQU A\n";
+    let source = "FIRST EQU SECOND\nSECOND EQU THIRD\nTHIRD EQU FIRST\n";
     let error = assemble(source, "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::CircularDefinition { edges } = &error else {
         panic!("expected circular definition error, got {error:?}");
@@ -84,19 +84,19 @@ fn reports_and_visualizes_circular_equ_definitions() {
         edges,
         &[
             DependencyEdge {
-                from: "A".to_owned(),
-                to: "B".to_owned(),
-                reference_span: 6..7,
+                from: "FIRST".to_owned(),
+                to: "SECOND".to_owned(),
+                reference_span: 10..16,
             },
             DependencyEdge {
-                from: "B".to_owned(),
-                to: "C".to_owned(),
-                reference_span: 14..15,
+                from: "SECOND".to_owned(),
+                to: "THIRD".to_owned(),
+                reference_span: 28..33,
             },
             DependencyEdge {
-                from: "C".to_owned(),
-                to: "A".to_owned(),
-                reference_span: 22..23,
+                from: "THIRD".to_owned(),
+                to: "FIRST".to_owned(),
+                reference_span: 44..49,
             },
         ]
     );
@@ -108,10 +108,10 @@ fn reports_and_visualizes_circular_equ_definitions() {
         .unwrap();
     let rendered = String::from_utf8(rendered).unwrap();
     assert!(rendered.contains("Circular symbol definition"));
-    assert!(rendered.contains("A depends on B"));
-    assert!(rendered.contains("B depends on C"));
-    assert!(rendered.contains("C depends on A, completing the cycle"));
-    assert!(rendered.contains("dependency cycle: A -> B -> C -> A"));
+    assert!(rendered.contains("FIRST depends on SECOND"));
+    assert!(rendered.contains("SECOND depends on THIRD"));
+    assert!(rendered.contains("THIRD depends on FIRST, completing the cycle"));
+    assert!(rendered.contains("dependency cycle: FIRST -> SECOND -> THIRD -> FIRST"));
 }
 
 #[test]
