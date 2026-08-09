@@ -17,6 +17,10 @@ pub struct ProgramAST {
 
 #[derive(Debug)]
 pub enum AsmLine {
+    Label {
+        name: String,
+        span: Range<usize>,
+    },
     Instruction {
         label: Option<String>,
         instr: AsmInstruction,
@@ -178,63 +182,84 @@ impl<'a> Parser<'a> {
     }
 
     pub fn parse(&mut self) -> Result<ProgramAST, ParseError> {
-        // Initialize the first token
         self.advance();
 
         let mut lines: Vec<AsmLine> = Vec::new();
 
-        use TokenKind as TK;
-        while self.curr().kind != TK::Eof {
-            while self.curr().kind == TK::Newline {
+        while self.curr().kind != TokenKind::Eof {
+            if self.curr().kind == TokenKind::Newline {
                 self.advance();
-            }
-            if self.curr().kind == TK::Eof {
-                break;
+                continue;
             }
 
-            // An identifier that is not a known instruction or directive starts a label.
-            let label = if self.curr().kind == TK::Identifier {
-                let name = self.curr().value.expect_identifier();
-                if identify_instruction(name).is_none() && identify_directive(name).is_none() {
-                    let label_name = name.to_owned();
-                    self.advance();
-
-                    if self.curr().kind == TK::Colon {
-                        self.advance();
-                    }
-
-                    Some(label_name)
-                } else {
-                    None
-                }
-            } else {
-                None
-            };
-
-            // Parse instruction or directive with the optional label.
-            let identifier = if self.curr().kind == TK::Identifier {
-                Some(self.curr().value.expect_identifier())
-            } else {
-                None
-            };
-
-            if identifier.and_then(identify_instruction).is_some() {
-                let instr = self.parse_instruction()?;
-                lines.push(AsmLine::Instruction { label, instr });
-            } else if identifier.and_then(identify_directive).is_some() {
-                let dir = self.parse_directive()?;
-                lines.push(AsmLine::Directive { label, dir });
-            } else if self.curr().kind == TK::Eof {
-                break;
-            } else {
-                return Err(self.err(
-                    "Expected instruction or directive".to_owned(),
-                    self.curr_span(),
-                ));
-            }
+            lines.push(self.parse_statement()?);
+            self.expect_line_end()?;
         }
 
         Ok(ProgramAST { lines })
+    }
+
+    fn parse_statement(&mut self) -> Result<AsmLine, ParseError> {
+        let statement_start = self.curr().span.start;
+        let label = self.parse_optional_label()?;
+
+        if matches!(self.curr().kind, TokenKind::Newline | TokenKind::Eof) {
+            return match label {
+                Some(name) => Ok(AsmLine::Label {
+                    name,
+                    span: statement_start..self.prev().span.end,
+                }),
+                None => Err(self.err("Expected instruction or directive".into(), self.curr_span())),
+            };
+        }
+
+        let identifier = if self.curr().kind == TokenKind::Identifier {
+            self.curr().value.expect_identifier()
+        } else {
+            return Err(self.err("Expected instruction or directive".into(), self.curr_span()));
+        };
+
+        if identify_instruction(identifier).is_some() {
+            let instr = self.parse_instruction()?;
+            Ok(AsmLine::Instruction { label, instr })
+        } else if identify_directive(identifier).is_some() {
+            let dir = self.parse_directive()?;
+            Ok(AsmLine::Directive { label, dir })
+        } else {
+            Err(self.err(
+                format!("Unknown instruction or directive `{identifier}`"),
+                self.curr_span(),
+            ))
+        }
+    }
+
+    fn parse_optional_label(&mut self) -> Result<Option<String>, ParseError> {
+        if self.curr().kind != TokenKind::Identifier {
+            return Ok(None);
+        }
+
+        let identifier = self.curr().value.expect_identifier();
+        if identify_instruction(identifier).is_some() || identify_directive(identifier).is_some() {
+            return Ok(None);
+        }
+
+        let label = identifier.to_owned();
+        self.advance();
+        if self.curr().kind == TokenKind::Colon {
+            self.advance();
+        }
+        Ok(Some(label))
+    }
+
+    fn expect_line_end(&mut self) -> Result<(), ParseError> {
+        match self.curr().kind {
+            TokenKind::Newline => {
+                self.advance();
+                Ok(())
+            }
+            TokenKind::Eof => Ok(()),
+            _ => Err(self.err("Expected end of line".into(), self.curr_span())),
+        }
     }
 
     fn parse_directive(&mut self) -> Result<AsmDirective, ParseError> {

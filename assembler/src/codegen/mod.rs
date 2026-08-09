@@ -125,6 +125,7 @@ pub fn assemble(src: &str, file_path: String) -> Result<[u8; 256], AssembleError
 
     for line in ast.lines {
         match line {
+            AsmLine::Label { .. } => {}
             AsmLine::Instruction { label: _, instr } => {
                 memory
                     .write_byte(instr.opcode)
@@ -214,6 +215,15 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
 
     for line in &ast.lines {
         match line {
+            AsmLine::Label { name, span } => {
+                if symbols.contains_key(name) {
+                    return Err(AssembleError::Parse(ParseError::new(
+                        format!("Duplicate symbol: {}", name),
+                        span.to_owned(),
+                    )));
+                }
+                symbols.insert(name.to_owned(), memory.get_pc());
+            }
             AsmLine::Instruction { label, instr } => {
                 // Register label if present
                 if let Some(label_name) = label {
