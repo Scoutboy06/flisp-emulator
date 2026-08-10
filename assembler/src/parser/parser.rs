@@ -27,11 +27,11 @@ pub enum AsmLine {
         span: Range<usize>,
     },
     Instruction {
-        label: Option<String>,
+        label: Option<AsmSymbol>,
         instr: AsmInstruction,
     },
     Directive {
-        label: Option<String>,
+        label: Option<AsmSymbol>,
         dir: AsmDirective,
     },
 }
@@ -59,7 +59,7 @@ pub struct AsmDirective {
     pub args: Vec<Atom>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AsmSymbol {
     pub span: Range<usize>,
     pub name: String,
@@ -155,14 +155,13 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_statement(&mut self) -> Result<AsmLine, ParseError> {
-        let statement_start = self.curr().span.start;
         let label = self.parse_optional_label()?;
 
         if matches!(self.curr().kind, TokenKind::Newline | TokenKind::Eof) {
             return match label {
-                Some(name) => Ok(AsmLine::Label {
-                    name,
-                    span: statement_start..self.prev().span.end,
+                Some(label) => Ok(AsmLine::Label {
+                    name: label.name,
+                    span: label.span,
                 }),
                 None => Err(self.err("Expected instruction or directive".into(), self.curr_span())),
             };
@@ -188,7 +187,7 @@ impl<'a> Parser<'a> {
         }
     }
 
-    fn parse_optional_label(&mut self) -> Result<Option<String>, ParseError> {
+    fn parse_optional_label(&mut self) -> Result<Option<AsmSymbol>, ParseError> {
         if self.curr().kind != TokenKind::Identifier {
             return Ok(None);
         }
@@ -198,7 +197,10 @@ impl<'a> Parser<'a> {
             return Ok(None);
         }
 
-        let label = identifier.to_owned();
+        let label = AsmSymbol {
+            name: identifier.to_owned(),
+            span: self.curr_span(),
+        };
         self.advance();
         if self.curr().kind == TokenKind::Colon {
             self.advance();

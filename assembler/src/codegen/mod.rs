@@ -14,7 +14,13 @@ use crate::{
 #[derive(Debug)]
 pub enum AssembleError {
     Parse(ParseError),
-    CircularDefinition { edges: Vec<DependencyEdge> },
+    DuplicateSymbol {
+        name: String,
+        definition_spans: Vec<Range<usize>>,
+    },
+    CircularDefinition {
+        edges: Vec<DependencyEdge>,
+    },
     OverflowFromInstruction(AsmInstruction),
     OverflowFromDirective(AsmDirective),
 }
@@ -35,6 +41,31 @@ impl AssembleError {
     pub fn build_report<'a>(&'a self, file_name: &'a str) -> Report<'a, (&'a str, Range<usize>)> {
         match self {
             AssembleError::Parse(e) => e.build_report(file_name),
+            AssembleError::DuplicateSymbol {
+                name,
+                definition_spans,
+            } => {
+                let duplicate_span = definition_spans
+                    .last()
+                    .expect("duplicate symbols have at least two definitions");
+                let mut report =
+                    Report::build(ReportKind::Error, (file_name, duplicate_span.to_owned()))
+                        .with_message(format!("Duplicate symbol `{name}`"));
+
+                for (index, span) in definition_spans.iter().enumerate() {
+                    let original = index == 0;
+                    report = report.with_label(
+                        Label::new((file_name, span.to_owned()))
+                            .with_color(if original { Color::Yellow } else { Color::Red })
+                            .with_message(if original {
+                                format!("`{name}` was first defined here")
+                            } else {
+                                format!("duplicate definition of `{name}`")
+                            }),
+                    );
+                }
+                report.finish()
+            }
             AssembleError::CircularDefinition { edges } => {
                 let closing = edges
                     .last()
@@ -293,6 +324,34 @@ enum ResolutionState {
 }
 
 fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleError> {
+    let mut declared_spans: HashMap<String, Vec<Range<usize>>> = HashMap::new();
+    let mut first_duplicate = None;
+    for line in &ast.lines {
+        let label = match line {
+            AsmLine::Label { name, span } => Some((name, span)),
+            AsmLine::Instruction {
+                label: Some(label), ..
+            }
+            | AsmLine::Directive {
+                label: Some(label), ..
+            } => Some((&label.name, &label.span)),
+            _ => None,
+        };
+        if let Some((name, span)) = label {
+            let spans = declared_spans.entry(name.to_owned()).or_default();
+            spans.push(span.to_owned());
+            if spans.len() == 2 && first_duplicate.is_none() {
+                first_duplicate = Some(name.to_owned());
+            }
+        }
+    }
+    if let Some(name) = first_duplicate {
+        return Err(AssembleError::DuplicateSymbol {
+            definition_spans: declared_spans.remove(&name).unwrap(),
+            name,
+        });
+    }
+
     let mut definitions = HashMap::new();
 
     // Constants are collected before layout so EQU aliases can refer forward.
@@ -310,7 +369,7 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
             continue;
         };
 
-        let name = label.as_ref().ok_or_else(|| {
+        let label = label.as_ref().ok_or_else(|| {
             AssembleError::Parse(ParseError::new(
                 "EQU directives require a symbol definition",
                 span.to_owned(),
@@ -325,12 +384,7 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
                 )));
             }
         };
-        if definitions.insert(name.to_owned(), expression).is_some() {
-            return Err(AssembleError::Parse(ParseError::new(
-                format!("Duplicate symbol: {}", name),
-                span.to_owned(),
-            )));
-        }
+        definitions.insert(label.name.to_owned(), expression);
     }
 
     let mut symbols = HashMap::new();
@@ -340,17 +394,11 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
     for line in &ast.lines {
         match line {
             AsmLine::Label { name, span } => {
-                define_address(&mut symbols, &definitions, name, memory.get_pc(), span)?;
+                define_address(&mut symbols, name, memory.get_pc(), span)?;
             }
             AsmLine::Instruction { label, instr } => {
-                if let Some(name) = label {
-                    define_address(
-                        &mut symbols,
-                        &definitions,
-                        name,
-                        memory.get_pc(),
-                        &instr.span,
-                    )?;
+                if let Some(label) = label {
+                    define_address(&mut symbols, &label.name, memory.get_pc(), &label.span)?;
                 }
                 memory
                     .inc_pc(instr.size())
@@ -358,8 +406,8 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
             }
             AsmLine::Directive { label, dir } if dir.name == Directive::Equ => {}
             AsmLine::Directive { label, dir } => {
-                if let Some(name) = label {
-                    define_address(&mut symbols, &definitions, name, memory.get_pc(), &dir.span)?;
+                if let Some(label) = label {
+                    define_address(&mut symbols, &label.name, memory.get_pc(), &label.span)?;
                 }
 
                 match dir.name {
@@ -414,17 +462,10 @@ fn collect_symbols(ast: &ProgramAST) -> Result<HashMap<String, u8>, AssembleErro
 
 fn define_address(
     symbols: &mut HashMap<String, u8>,
-    definitions: &HashMap<String, Expression>,
     name: &str,
     address: u8,
-    span: &Range<usize>,
+    _span: &Range<usize>,
 ) -> Result<(), AssembleError> {
-    if symbols.contains_key(name) || definitions.contains_key(name) {
-        return Err(AssembleError::Parse(ParseError::new(
-            format!("Duplicate symbol: {}", name),
-            span.to_owned(),
-        )));
-    }
     symbols.insert(name.to_owned(), address);
     Ok(())
 }

@@ -174,6 +174,34 @@ fn output_preserves_explicitly_initialized_zeroes() {
 }
 
 #[test]
+fn duplicate_symbol_diagnostic_shows_all_label_definitions() {
+    let source = "start: NOP\nstart: NOP\nstart: NOP\n";
+    let error = assemble(source, "test.sflisp".to_owned()).unwrap_err();
+    let AssembleError::DuplicateSymbol {
+        name,
+        definition_spans,
+    } = &error
+    else {
+        panic!("expected duplicate symbol error, got {error:?}");
+    };
+
+    assert_eq!(name, "start");
+    assert_eq!(definition_spans, &[0..5, 11..16, 22..27]);
+
+    let mut rendered = Vec::new();
+    error
+        .build_report("test.sflisp")
+        .write(("test.sflisp", Source::from(source)), &mut rendered)
+        .unwrap();
+    let rendered = String::from_utf8(rendered).unwrap();
+    assert!(rendered.contains("`start` was first defined here"));
+    assert_eq!(
+        rendered.matches("duplicate definition of `start`").count(),
+        2
+    );
+}
+
+#[test]
 fn s19_uses_the_first_emitted_address_for_its_start_record() {
     let output = assemble(
         "ORG $00\nFCB $AA\nORG $20\nNOP\nORG $FF\nFCB $20\n",
