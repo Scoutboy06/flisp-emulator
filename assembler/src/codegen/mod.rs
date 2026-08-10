@@ -448,27 +448,40 @@ fn memory_overwrite_warning(
 }
 
 fn format_addresses(addresses: &[u8]) -> String {
-    match addresses {
-        [address] => format!("address ${address:02X}"),
-        addresses
-            if addresses
-                .windows(2)
-                .all(|pair| pair[1] == pair[0].wrapping_add(1)) =>
-        {
-            format!(
-                "addresses ${:02X}–${:02X}",
-                addresses.first().unwrap(),
-                addresses.last().unwrap()
-            )
+    let mut addresses = addresses.to_vec();
+    addresses.sort_unstable();
+    addresses.dedup();
+
+    let mut ranges = Vec::new();
+    let mut start = addresses[0];
+    let mut end = start;
+    for address in addresses.iter().copied().skip(1) {
+        if end.checked_add(1) == Some(address) {
+            end = address;
+        } else {
+            ranges.push((start, end));
+            start = address;
+            end = address;
         }
-        _ => format!(
-            "addresses {}",
-            addresses
-                .iter()
-                .map(|address| format!("${address:02X}"))
-                .collect::<Vec<_>>()
-                .join(", ")
-        ),
+    }
+    ranges.push((start, end));
+
+    let formatted = ranges
+        .into_iter()
+        .map(|(start, end)| {
+            if start == end {
+                format!("${start:02X}")
+            } else {
+                format!("${start:02X}–${end:02X}")
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(", ");
+
+    if addresses.len() == 1 {
+        format!("address {formatted}")
+    } else {
+        format!("addresses {formatted}")
     }
 }
 
@@ -762,4 +775,35 @@ pub fn emit_fmem(output: &AssemblyOutput, file_name: &str) -> String {
     }
 
     out
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_addresses;
+
+    #[test]
+    fn formats_one_address() {
+        assert_eq!(format_addresses(&[0x20]), "address $20");
+    }
+
+    #[test]
+    fn formats_one_contiguous_range() {
+        assert_eq!(format_addresses(&[0x20, 0x21, 0x22]), "addresses $20–$22");
+    }
+
+    #[test]
+    fn formats_multiple_ranges_and_single_addresses() {
+        assert_eq!(
+            format_addresses(&[0x20, 0x21, 0x22, 0x24, 0x25, 0x26, 0x29]),
+            "addresses $20–$22, $24–$26, $29"
+        );
+    }
+
+    #[test]
+    fn sorts_and_deduplicates_addresses_before_formatting() {
+        assert_eq!(
+            format_addresses(&[0x26, 0x20, 0x21, 0x20, 0x25, 0x24]),
+            "addresses $20–$21, $24–$26"
+        );
+    }
 }
