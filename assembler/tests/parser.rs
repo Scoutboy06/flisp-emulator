@@ -174,6 +174,18 @@ fn output_preserves_explicitly_initialized_zeroes() {
 }
 
 #[test]
+fn s19_uses_the_first_emitted_address_for_its_start_record() {
+    let output = assemble(
+        "ORG $00\nFCB $AA\nORG $20\nNOP\nORG $FF\nFCB $20\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(emit_s19(&output).lines().last(), Some("S9030000FC"));
+    assert_eq!(output.memory()[0xff], 0x20);
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {

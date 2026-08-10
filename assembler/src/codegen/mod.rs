@@ -524,9 +524,13 @@ pub fn emit_s19(output: &AssemblyOutput) -> String {
         ));
     }
 
-    // FLISP stores its reset address at the final memory location.
-    let start_addr = output.memory[255];
-    if start_addr != 0 {
+    // qaflisp uses the first emitted address for the S9 termination record.
+    // FLISP's processor entry point remains the reset vector stored at $FF.
+    if let Some(start_addr) = output
+        .initialized
+        .iter()
+        .position(|initialized| *initialized)
+    {
         records.push(Record::S9(Address16(start_addr as u16)));
     }
 
