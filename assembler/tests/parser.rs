@@ -255,6 +255,22 @@ fn instruction_emission_wraps_at_end_of_memory() {
 }
 
 #[test]
+fn fcb_emission_wraps_at_end_of_memory() {
+    let output = assemble("ORG $FE\nFCB $AA,$00,$BB\n", "test.sflisp".to_owned()).unwrap();
+
+    assert_eq!(output.memory()[0xfe], 0xaa);
+    assert_eq!(output.memory()[0xff], 0x00);
+    assert_eq!(output.memory()[0x00], 0xbb);
+    assert!(output.initialized()[0xfe]);
+    assert!(output.initialized()[0xff]);
+    assert!(output.initialized()[0x00]);
+    assert!(matches!(
+        output.warnings(),
+        [AssemblyWarning::MemoryWrap { .. }]
+    ));
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
