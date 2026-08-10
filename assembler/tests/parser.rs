@@ -271,6 +271,24 @@ fn fcb_emission_wraps_at_end_of_memory() {
 }
 
 #[test]
+fn labels_after_memory_wrap_resolve_to_the_wrapped_address() {
+    let output = assemble(
+        "ORG $FF\nLDA #$42\nafter: FCB after\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(output.memory()[0xff], 0xf0);
+    assert_eq!(output.memory()[0x00], 0x42);
+    assert_eq!(output.memory()[0x01], 0x01);
+    assert_eq!(output.warnings().len(), 1);
+    assert!(matches!(
+        output.warnings()[0],
+        AssemblyWarning::MemoryWrap { .. }
+    ));
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
