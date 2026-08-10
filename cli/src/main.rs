@@ -1,4 +1,4 @@
-use std::{fs::File, path::PathBuf};
+use std::{fs::File, path::PathBuf, process::ExitCode};
 
 use assembler::codegen::{assemble, emit_fmem, emit_s19};
 use clap::{Parser, Subcommand, builder::OsStr};
@@ -20,7 +20,7 @@ enum Cli {
 #[derive(Subcommand, Debug)]
 enum Commands {}
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<ExitCode, Box<dyn std::error::Error>> {
     let args = Cli::parse();
 
     match args {
@@ -34,11 +34,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .expect("Failed to get file stem")
                 .to_string_lossy();
             let file_path = input.to_string_lossy().to_string();
-            let res = assemble(&file, file_path.to_owned());
-            let Ok(mem) = res else {
-                eprintln!("Assemble failed:");
-                res.err().unwrap().report_on(&file_path, &file);
-                panic!();
+            let mem = match assemble(&file, file_path.to_owned()) {
+                Ok(mem) => mem,
+                Err(error) => {
+                    eprintln!("Assemble failed:");
+                    error.report_on(&file_path, &file);
+                    return Ok(ExitCode::FAILURE);
+                }
             };
 
             let s19_str = emit_s19(&mem);
@@ -53,7 +55,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
 
-    Ok(())
+    Ok(ExitCode::SUCCESS)
 }
 
 fn run_visualize(input: PathBuf) {
