@@ -1,6 +1,6 @@
 use ariadne::Source;
 use assembler::{
-    codegen::{AssembleError, DependencyEdge, assemble, emit_fmem, emit_s19},
+    codegen::{AssembleError, AssemblyWarning, DependencyEdge, assemble, emit_fmem, emit_s19},
     parser::{AsmLine, Expression, Operand, Parser},
 };
 
@@ -236,6 +236,22 @@ fn instruction_emission_wraps_at_end_of_memory() {
     assert!(output.initialized()[0x00]);
     assert!(output.initialized()[0x01]);
     assert_eq!(emit_s19(&output).lines().last(), Some("S90300FFFD"));
+    assert_eq!(
+        output.warnings(),
+        &[AssemblyWarning::MemoryWrap { span: 8..16 }]
+    );
+
+    let mut rendered = Vec::new();
+    output.warnings()[0]
+        .build_report("test.sflisp")
+        .write(
+            ("test.sflisp", Source::from("ORG $FF\nLDA #$42\n")),
+            &mut rendered,
+        )
+        .unwrap();
+    let rendered = String::from_utf8(rendered).unwrap();
+    assert!(rendered.contains("Assembly wraps around the end of memory"));
+    assert!(rendered.contains("emission continues at address $00"));
 }
 
 #[test]

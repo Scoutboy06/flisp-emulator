@@ -122,11 +122,40 @@ impl AssembleError {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AssemblyWarning {
+    MemoryWrap { span: Range<usize> },
+}
+
+impl AssemblyWarning {
+    pub fn report_on(&self, file_name: &str, src: &str) {
+        self.build_report(file_name)
+            .eprint((file_name, Source::from(src)))
+            .unwrap();
+    }
+
+    pub fn build_report<'a>(&'a self, file_name: &'a str) -> Report<'a, (&'a str, Range<usize>)> {
+        match self {
+            Self::MemoryWrap { span } => {
+                Report::build(ReportKind::Warning, (file_name, span.to_owned()))
+                    .with_message("Assembly wraps around the end of memory")
+                    .with_label(
+                        Label::new((file_name, span.to_owned()))
+                            .with_color(Color::Yellow)
+                            .with_message("emission continues at address $00"),
+                    )
+                    .finish()
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct AssemblyOutput {
     memory: [u8; 256],
     initialized: [bool; 256],
     first_emitted: Option<u8>,
+    warnings: Vec<AssemblyWarning>,
 }
 
 impl AssemblyOutput {
@@ -136,6 +165,10 @@ impl AssemblyOutput {
 
     pub fn initialized(&self) -> &[bool; 256] {
         &self.initialized
+    }
+
+    pub fn warnings(&self) -> &[AssemblyWarning] {
+        &self.warnings
     }
 }
 
@@ -187,11 +220,12 @@ impl Memory {
         Ok(())
     }
 
-    pub fn into_output(self) -> AssemblyOutput {
+    pub fn into_output(self, warnings: Vec<AssemblyWarning>) -> AssemblyOutput {
         AssemblyOutput {
             memory: self.data,
             initialized: self.initialized,
             first_emitted: self.first_emitted,
+            warnings,
         }
     }
 }
@@ -205,11 +239,17 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
     let symbols = collect_symbols(&ast)?;
 
     let mut memory = Memory::default();
+    let mut warnings = Vec::new();
 
     for line in ast.lines {
         match line {
             AsmLine::Label { .. } => {}
             AsmLine::Instruction { label: _, instr } => {
+                if memory.get_pc() as usize + instr.size() as usize > 256 {
+                    warnings.push(AssemblyWarning::MemoryWrap {
+                        span: instr.span.to_owned(),
+                    });
+                }
                 memory
                     .write_byte(instr.opcode)
                     .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
@@ -257,6 +297,11 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
                     }
                 },
                 Directive::Fcb => {
+                    if memory.get_pc() as usize + dir.args.len() > 256 {
+                        warnings.push(AssemblyWarning::MemoryWrap {
+                            span: dir.span.to_owned(),
+                        });
+                    }
                     for arg in dir.args.iter() {
                         match arg {
                             Atom::Expr(n_or_sym) => match n_or_sym {
@@ -287,7 +332,7 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
         }
     }
 
-    Ok(memory.into_output())
+    Ok(memory.into_output(warnings))
 }
 
 fn resolve_emitted_expression(

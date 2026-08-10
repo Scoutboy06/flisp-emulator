@@ -43,6 +43,10 @@ fn main() -> Result<ExitCode, Box<dyn std::error::Error>> {
                 }
             };
 
+            for warning in mem.warnings() {
+                warning.report_on(&file_path, &file);
+            }
+
             let s19_str = emit_s19(&mem);
             let s19_file_name = format!("{}.s19", file_stem);
             std::fs::write(&s19_file_name, s19_str)?;
