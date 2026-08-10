@@ -342,6 +342,25 @@ fn overwrite_warning_lists_only_previously_initialized_addresses() {
 }
 
 #[test]
+fn relative_branch_uses_wrapped_next_instruction_address() {
+    let output = assemble(
+        "ORG $FF\nBRA target\nNOP\ntarget: NOP\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(output.memory()[0xff], 0x21);
+    assert_eq!(output.memory()[0x00], 0x01);
+    assert_eq!(output.memory()[0x01], 0x00);
+    assert_eq!(output.memory()[0x02], 0x00);
+    assert_eq!(output.warnings().len(), 1);
+    assert!(matches!(
+        output.warnings()[0],
+        AssemblyWarning::MemoryWrap { .. }
+    ));
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
