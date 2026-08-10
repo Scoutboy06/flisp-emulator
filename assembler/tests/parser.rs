@@ -361,6 +361,24 @@ fn relative_branch_uses_wrapped_next_instruction_address() {
 }
 
 #[test]
+fn backward_relative_branch_wraps_across_memory_boundary() {
+    let output = assemble(
+        "ORG $FE\ntarget: NOP\nBRA target\n",
+        "test.sflisp".to_owned(),
+    )
+    .unwrap();
+
+    assert_eq!(output.memory()[0xfe], 0x00);
+    assert_eq!(output.memory()[0xff], 0x21);
+    assert_eq!(output.memory()[0x00], 0xfd);
+    assert_eq!(output.warnings().len(), 1);
+    assert!(matches!(
+        output.warnings()[0],
+        AssemblyWarning::MemoryWrap { .. }
+    ));
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
