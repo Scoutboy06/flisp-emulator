@@ -123,8 +123,21 @@ impl AssembleError {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MemoryWriteOrigin {
+    pub addresses: Vec<u8>,
+    pub span: Range<usize>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AssemblyWarning {
-    MemoryWrap { span: Range<usize> },
+    MemoryWrap {
+        span: Range<usize>,
+    },
+    MemoryOverwrite {
+        addresses: Vec<u8>,
+        original_writes: Vec<MemoryWriteOrigin>,
+        overwrite_span: Range<usize>,
+    },
 }
 
 impl AssemblyWarning {
@@ -143,6 +156,33 @@ impl AssemblyWarning {
                         Label::new((file_name, span.to_owned()))
                             .with_color(Color::Yellow)
                             .with_message("emission continues at address $00"),
+                    )
+                    .finish()
+            }
+            Self::MemoryOverwrite {
+                addresses,
+                original_writes,
+                overwrite_span,
+            } => {
+                let addresses = format_addresses(addresses);
+                let mut report =
+                    Report::build(ReportKind::Warning, (file_name, overwrite_span.to_owned()))
+                        .with_message("Assembly overwrites initialized memory");
+                for original in original_writes {
+                    report = report.with_label(
+                        Label::new((file_name, original.span.to_owned()))
+                            .with_color(Color::Yellow)
+                            .with_message(format!(
+                                "{} first written here",
+                                format_addresses(&original.addresses)
+                            )),
+                    );
+                }
+                report
+                    .with_label(
+                        Label::new((file_name, overwrite_span.to_owned()))
+                            .with_color(Color::Red)
+                            .with_message(format!("overwrites {addresses}")),
                     )
                     .finish()
             }
@@ -176,6 +216,7 @@ impl AssemblyOutput {
 pub struct Memory {
     data: [u8; 256],
     initialized: [bool; 256],
+    first_write_spans: Vec<Option<Range<usize>>>,
     first_emitted: Option<u8>,
     pc: u16,
 }
@@ -191,6 +232,7 @@ impl Default for Memory {
         Memory {
             data: [0u8; 256],
             initialized: [false; 256],
+            first_write_spans: vec![None; 256],
             first_emitted: None,
             pc: 0,
         }
@@ -198,13 +240,19 @@ impl Default for Memory {
 }
 
 impl Memory {
-    pub fn write_byte(&mut self, byte: u8) -> Result<(), MemoryError> {
+    pub fn write_byte(
+        &mut self,
+        byte: u8,
+        source_span: &Range<usize>,
+    ) -> Result<Option<Range<usize>>, MemoryError> {
         let addr = self.get_pc() as usize;
+        let original_span = self.first_write_spans[addr].to_owned();
         self.data[addr] = byte;
         self.initialized[addr] = true;
+        self.first_write_spans[addr].get_or_insert_with(|| source_span.to_owned());
         self.first_emitted.get_or_insert(addr as u8);
         self.pc = self.pc.wrapping_add(1);
-        Ok(())
+        Ok(original_span)
     }
 
     pub fn set_pc(&mut self, new_pc: u8) {
@@ -245,13 +293,13 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
         match line {
             AsmLine::Label { .. } => {}
             AsmLine::Instruction { label: _, instr } => {
+                let mut overwritten = Vec::new();
                 if memory.get_pc() as usize + instr.size() as usize > 256 {
                     warnings.push(AssemblyWarning::MemoryWrap {
                         span: instr.span.to_owned(),
                     });
                 }
-                memory
-                    .write_byte(instr.opcode)
+                write_emitted_byte(&mut memory, instr.opcode, &instr.span, &mut overwritten)
                     .map_err(|_| AssembleError::OverflowFromInstruction(instr.to_owned()))?;
                 for operand in instr.operands.iter() {
                     match operand {
@@ -259,20 +307,25 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
                             let target = resolve_emitted_expression(expression, &symbols)?;
                             let next_instruction = memory.get_pc().wrapping_add(1);
                             let offset = target.wrapping_sub(next_instruction);
-                            memory.write_byte(offset).map_err(|_| {
-                                AssembleError::OverflowFromInstruction(instr.to_owned())
-                            })?;
+                            write_emitted_byte(&mut memory, offset, &instr.span, &mut overwritten)
+                                .map_err(|_| {
+                                    AssembleError::OverflowFromInstruction(instr.to_owned())
+                                })?;
                         }
                         Operand::Imm(expression)
                         | Operand::AbsAdr(expression)
                         | Operand::N(expression) => {
                             let value = resolve_emitted_expression(expression, &symbols)?;
-                            memory.write_byte(value).map_err(|_| {
+                            write_emitted_byte(&mut memory, value, &instr.span, &mut overwritten)
+                                .map_err(|_| {
                                 AssembleError::OverflowFromInstruction(instr.to_owned())
                             })?;
                         }
                         Operand::Reg(_) => { /* Not written to memory */ }
                     }
+                }
+                if let Some(warning) = memory_overwrite_warning(overwritten, &instr.span) {
+                    warnings.push(warning);
                 }
             }
             AsmLine::Directive { label: _, dir } => match dir.name {
@@ -297,6 +350,7 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
                     }
                 },
                 Directive::Fcb => {
+                    let mut overwritten = Vec::new();
                     if memory.get_pc() as usize + dir.args.len() > 256 {
                         warnings.push(AssemblyWarning::MemoryWrap {
                             span: dir.span.to_owned(),
@@ -306,9 +360,10 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
                         match arg {
                             Atom::Expr(n_or_sym) => match n_or_sym {
                                 Expression::Number { value: n, .. } => {
-                                    memory.write_byte(*n).map_err(|_| {
-                                        dbg!(AssembleError::OverflowFromDirective(dir.clone()))
-                                    })?
+                                    write_emitted_byte(&mut memory, *n, &dir.span, &mut overwritten)
+                                        .map_err(|_| {
+                                            dbg!(AssembleError::OverflowFromDirective(dir.clone()))
+                                        })?
                                 }
                                 Expression::Symbol { name: sym, span } => {
                                     let val = symbols.get(sym.as_str()).ok_or_else(|| {
@@ -317,13 +372,22 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
                                             span.to_owned(),
                                         ))
                                     })?;
-                                    memory.write_byte(*val).map_err(|_| {
+                                    write_emitted_byte(
+                                        &mut memory,
+                                        *val,
+                                        &dir.span,
+                                        &mut overwritten,
+                                    )
+                                    .map_err(|_| {
                                         dbg!(AssembleError::OverflowFromDirective(dir.clone()))
                                     })?
                                 }
                             },
                             _ => unreachable!(),
                         }
+                    }
+                    if let Some(warning) = memory_overwrite_warning(overwritten, &dir.span) {
+                        warnings.push(warning);
                     }
                 }
                 Directive::Equ => {}
@@ -333,6 +397,79 @@ pub fn assemble(src: &str, file_path: String) -> Result<AssemblyOutput, Assemble
     }
 
     Ok(memory.into_output(warnings))
+}
+
+fn write_emitted_byte(
+    memory: &mut Memory,
+    byte: u8,
+    source_span: &Range<usize>,
+    overwritten: &mut Vec<(u8, Range<usize>)>,
+) -> Result<(), MemoryError> {
+    let address = memory.get_pc();
+    if let Some(original_span) = memory.write_byte(byte, source_span)? {
+        overwritten.push((address, original_span));
+    }
+    Ok(())
+}
+
+fn memory_overwrite_warning(
+    overwritten: Vec<(u8, Range<usize>)>,
+    overwrite_span: &Range<usize>,
+) -> Option<AssemblyWarning> {
+    if overwritten.is_empty() {
+        return None;
+    }
+
+    let mut addresses = Vec::new();
+    let mut original_writes: Vec<MemoryWriteOrigin> = Vec::new();
+    for (address, span) in overwritten {
+        if !addresses.contains(&address) {
+            addresses.push(address);
+        }
+        if let Some(origin) = original_writes
+            .iter_mut()
+            .find(|origin| origin.span == span)
+        {
+            if !origin.addresses.contains(&address) {
+                origin.addresses.push(address);
+            }
+        } else {
+            original_writes.push(MemoryWriteOrigin {
+                addresses: vec![address],
+                span,
+            });
+        }
+    }
+    Some(AssemblyWarning::MemoryOverwrite {
+        addresses,
+        original_writes,
+        overwrite_span: overwrite_span.to_owned(),
+    })
+}
+
+fn format_addresses(addresses: &[u8]) -> String {
+    match addresses {
+        [address] => format!("address ${address:02X}"),
+        addresses
+            if addresses
+                .windows(2)
+                .all(|pair| pair[1] == pair[0].wrapping_add(1)) =>
+        {
+            format!(
+                "addresses ${:02X}–${:02X}",
+                addresses.first().unwrap(),
+                addresses.last().unwrap()
+            )
+        }
+        _ => format!(
+            "addresses {}",
+            addresses
+                .iter()
+                .map(|address| format!("${address:02X}"))
+                .collect::<Vec<_>>()
+                .join(", ")
+        ),
+    }
 }
 
 fn resolve_emitted_expression(

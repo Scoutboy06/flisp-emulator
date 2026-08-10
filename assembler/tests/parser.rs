@@ -289,6 +289,59 @@ fn labels_after_memory_wrap_resolve_to_the_wrapped_address() {
 }
 
 #[test]
+fn overwriting_initialized_memory_produces_a_warning() {
+    let source = "ORG $20\nFCB $AA\nORG $21\nFCB $BB\nORG $20\nFCB $CC,$DD\n";
+    let output = assemble(source, "test.sflisp".to_owned()).unwrap();
+
+    assert_eq!(&output.memory()[0x20..=0x21], &[0xcc, 0xdd]);
+    let overwrite = output
+        .warnings()
+        .iter()
+        .find(|warning| matches!(warning, AssemblyWarning::MemoryOverwrite { .. }))
+        .expect("expected overwrite warning");
+    let AssemblyWarning::MemoryOverwrite { addresses, .. } = overwrite else {
+        unreachable!();
+    };
+    assert_eq!(addresses, &[0x20, 0x21]);
+
+    let mut rendered = Vec::new();
+    overwrite
+        .build_report("test.sflisp")
+        .write(("test.sflisp", Source::from(source)), &mut rendered)
+        .unwrap();
+    let rendered = String::from_utf8(rendered).unwrap();
+    assert!(rendered.contains("Assembly overwrites initialized memory"));
+    assert!(rendered.contains("address $20 first written here"));
+    assert!(rendered.contains("address $21 first written here"));
+    assert!(rendered.contains("overwrites addresses $20–$21"));
+}
+
+#[test]
+fn overwrite_warning_lists_only_previously_initialized_addresses() {
+    let source = "ORG $20\nFCB $AA\nORG $22\nFCB $BB\nORG $20\nFCB $CC,$DD,$EE\n";
+    let output = assemble(source, "test.sflisp".to_owned()).unwrap();
+
+    let overwrite = output
+        .warnings()
+        .iter()
+        .find(|warning| matches!(warning, AssemblyWarning::MemoryOverwrite { .. }))
+        .expect("expected overwrite warning");
+    let AssemblyWarning::MemoryOverwrite { addresses, .. } = overwrite else {
+        unreachable!();
+    };
+    assert_eq!(addresses, &[0x20, 0x22]);
+
+    let mut rendered = Vec::new();
+    overwrite
+        .build_report("test.sflisp")
+        .write(("test.sflisp", Source::from(source)), &mut rendered)
+        .unwrap();
+    let rendered = String::from_utf8(rendered).unwrap();
+    assert!(rendered.contains("overwrites addresses $20, $22"));
+    assert!(!rendered.contains("overwrites addresses $20–$22"));
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
