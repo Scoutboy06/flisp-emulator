@@ -126,6 +126,7 @@ impl AssembleError {
 pub struct AssemblyOutput {
     memory: [u8; 256],
     initialized: [bool; 256],
+    first_emitted: Option<u8>,
 }
 
 impl AssemblyOutput {
@@ -142,6 +143,7 @@ impl AssemblyOutput {
 pub struct Memory {
     data: [u8; 256],
     initialized: [bool; 256],
+    first_emitted: Option<u8>,
     pc: u16,
 }
 
@@ -156,6 +158,7 @@ impl Default for Memory {
         Memory {
             data: [0u8; 256],
             initialized: [false; 256],
+            first_emitted: None,
             pc: 0,
         }
     }
@@ -163,22 +166,11 @@ impl Default for Memory {
 
 impl Memory {
     pub fn write_byte(&mut self, byte: u8) -> Result<(), MemoryError> {
-        let addr = self.pc as usize;
-        if addr >= self.data.len() {
-            return Err(MemoryError::OutOfBounds(addr));
-        }
+        let addr = self.get_pc() as usize;
         self.data[addr] = byte;
         self.initialized[addr] = true;
-
-        // Update the program counter and check for overflow
-        let (new_pc, overflow) = self.pc.overflowing_add(1);
-        self.pc = new_pc;
-
-        // Overflow is only an error if it happens after writing to the last valid address
-        if overflow && self.pc != 0 {
-            return Err(MemoryError::Overflow);
-        }
-
+        self.first_emitted.get_or_insert(addr as u8);
+        self.pc = self.pc.wrapping_add(1);
         Ok(())
     }
 
@@ -191,12 +183,7 @@ impl Memory {
     }
 
     pub fn inc_pc(&mut self, inc: u8) -> Result<(), MemoryError> {
-        let (new_pc, overflow) = self.pc.overflowing_add(inc as u16);
-        self.pc = new_pc;
-
-        if overflow && self.pc != 0 {
-            return Err(MemoryError::Overflow);
-        }
+        self.pc = self.pc.wrapping_add(inc as u16);
         Ok(())
     }
 
@@ -204,6 +191,7 @@ impl Memory {
         AssemblyOutput {
             memory: self.data,
             initialized: self.initialized,
+            first_emitted: self.first_emitted,
         }
     }
 }
@@ -567,11 +555,7 @@ pub fn emit_s19(output: &AssemblyOutput) -> String {
 
     // qaflisp uses the first emitted address for the S9 termination record.
     // FLISP's processor entry point remains the reset vector stored at $FF.
-    if let Some(start_addr) = output
-        .initialized
-        .iter()
-        .position(|initialized| *initialized)
-    {
+    if let Some(start_addr) = output.first_emitted {
         records.push(Record::S9(Address16(start_addr as u16)));
     }
 

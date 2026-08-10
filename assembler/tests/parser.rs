@@ -214,6 +214,31 @@ fn s19_uses_the_first_emitted_address_for_its_start_record() {
 }
 
 #[test]
+fn two_byte_instruction_fits_at_end_of_memory() {
+    let output = assemble("ORG $FE\nLDA #$42\n", "test.sflisp".to_owned()).unwrap();
+
+    assert_eq!(&output.memory()[0xfe..=0xff], &[0xf0, 0x42]);
+    assert!(
+        output.initialized()[0xfe..=0xff]
+            .iter()
+            .all(|initialized| *initialized)
+    );
+}
+
+#[test]
+fn instruction_emission_wraps_at_end_of_memory() {
+    let output = assemble("ORG $FF\nLDA #$42\nafter: NOP\n", "test.sflisp".to_owned()).unwrap();
+
+    assert_eq!(output.memory()[0xff], 0xf0);
+    assert_eq!(output.memory()[0x00], 0x42);
+    assert_eq!(output.memory()[0x01], 0x00);
+    assert!(output.initialized()[0xff]);
+    assert!(output.initialized()[0x00]);
+    assert!(output.initialized()[0x01]);
+    assert_eq!(emit_s19(&output).lines().last(), Some("S90300FFFD"));
+}
+
+#[test]
 fn equ_requires_a_symbol_definition() {
     let error = assemble("EQU $2A\n", "test.sflisp".to_owned()).unwrap_err();
     let AssembleError::Parse(error) = error else {
