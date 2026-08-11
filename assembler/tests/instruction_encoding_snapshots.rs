@@ -35,6 +35,11 @@ const RELATIVE: &[&str] = &[
     "BLE $42", "BLT $42",
 ];
 
+const REGISTER: &[&str] = &[
+    "TFR A,CC", "TFR CC,A", "TFR X,Y", "TFR Y,X", "TFR X,SP", "TFR SP,X", "TFR Y,SP", "TFR SP,Y",
+    "EXG A,CC", "EXG X,Y", "EXG X,SP", "EXG Y,SP",
+];
+
 const INDEXED: &[&str] = &[
     "STX $42,SP",
     "STY $42,SP",
@@ -225,6 +230,11 @@ fn absolute_instruction_encodings() {
 #[test]
 fn indexed_instruction_encodings() {
     assert_encoding_snapshot("indexed", INDEXED);
+}
+
+#[test]
+fn register_instruction_encodings() {
+    assert_encoding_snapshot("register", REGISTER);
 }
 
 #[test]
