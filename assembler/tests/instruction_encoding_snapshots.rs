@@ -29,6 +29,42 @@ const IMMEDIATE: &[&str] = &[
     "LDA #$42",
 ];
 
+const ABSOLUTE: &[&str] = &[
+    "STX $42",
+    "STY $42",
+    "STSP $42",
+    "JMP $42",
+    "JSR $42",
+    "CLR $42",
+    "NEG $42",
+    "INC $42",
+    "DEC $42",
+    "TST $42",
+    "COM $42",
+    "LSL $42",
+    "LSR $42",
+    "ROL $42",
+    "ROR $42",
+    "ASR $42",
+    "LDX $42",
+    "LDY $42",
+    "LDSP $42",
+    "SBCA $42",
+    "SUBA $42",
+    "ADCA $42",
+    "ADDA $42",
+    "CMPA $42",
+    "BITA $42",
+    "ANDA $42",
+    "ORA $42",
+    "EORA $42",
+    "CMPX $42",
+    "CMPY $42",
+    "CMPSP $42",
+    "STA $42",
+    "LDA $42",
+];
+
 #[test]
 fn inherent_instruction_encodings() {
     assert_encoding_snapshot("inherent", INHERENT);
@@ -37,6 +73,11 @@ fn inherent_instruction_encodings() {
 #[test]
 fn immediate_instruction_encodings() {
     assert_encoding_snapshot("immediate", IMMEDIATE);
+}
+
+#[test]
+fn absolute_instruction_encodings() {
+    assert_encoding_snapshot("absolute", ABSOLUTE);
 }
 
 fn assert_encoding_snapshot(name: &str, cases: &[&str]) {
