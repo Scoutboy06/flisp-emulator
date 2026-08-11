@@ -29,6 +29,12 @@ const IMMEDIATE: &[&str] = &[
     "LDA #$42",
 ];
 
+const RELATIVE: &[&str] = &[
+    "BSR $42", "BRA $42", "BMI $42", "BPL $42", "BEQ $42", "BNE $42", "BVS $42", "BVC $42",
+    "BCS $42", "BLO $42", "BCC $42", "BHS $42", "BHI $42", "BLS $42", "BGT $42", "BGE $42",
+    "BLE $42", "BLT $42",
+];
+
 const ABSOLUTE: &[&str] = &[
     "STX $42",
     "STY $42",
@@ -78,6 +84,11 @@ fn immediate_instruction_encodings() {
 #[test]
 fn absolute_instruction_encodings() {
     assert_encoding_snapshot("absolute", ABSOLUTE);
+}
+
+#[test]
+fn relative_instruction_encodings() {
+    assert_encoding_snapshot("relative", RELATIVE);
 }
 
 fn assert_encoding_snapshot(name: &str, cases: &[&str]) {
