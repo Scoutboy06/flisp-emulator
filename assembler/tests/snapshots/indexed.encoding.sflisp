@@ -1,0 +1,133 @@
+STX $42,SP      ; 40 42
+STY $42,SP      ; 41 42
+STSP $42,SP     ; 42 42
+CLR $42,SP      ; 45 42
+NEG $42,SP      ; 46 42
+INC $42,SP      ; 47 42
+DEC $42,SP      ; 48 42
+TST $42,SP      ; 49 42
+COM $42,SP      ; 4A 42
+LSL $42,SP      ; 4B 42
+LSR $42,SP      ; 4C 42
+ROL $42,SP      ; 4D 42
+ROR $42,SP      ; 4E 42
+ASR $42,SP      ; 4F 42
+STX $42,X       ; 50 42
+STY $42,X       ; 51 42
+STSP $42,X      ; 52 42
+JMP $42,X       ; 53 42
+JSR $42,X       ; 54 42
+CLR $42,X       ; 55 42
+NEG $42,X       ; 56 42
+INC $42,X       ; 57 42
+DEC $42,X       ; 58 42
+TST $42,X       ; 59 42
+COM $42,X       ; 5A 42
+LSL $42,X       ; 5B 42
+LSR $42,X       ; 5C 42
+ROL $42,X       ; 5D 42
+ROR $42,X       ; 5E 42
+ASR $42,X       ; 5F 42
+STX $42,Y       ; 70 42
+STY $42,Y       ; 71 42
+STSP $42,Y      ; 72 42
+JMP $42,Y       ; 73 42
+JSR $42,Y       ; 74 42
+CLR $42,Y       ; 75 42
+NEG $42,Y       ; 76 42
+INC $42,Y       ; 77 42
+DEC $42,Y       ; 78 42
+TST $42,Y       ; 79 42
+COM $42,Y       ; 7A 42
+LSL $42,Y       ; 7B 42
+LSR $42,Y       ; 7C 42
+ROL $42,Y       ; 7D 42
+ROR $42,Y       ; 7E 42
+ASR $42,Y       ; 7F 42
+LDX $42,SP      ; B0 42
+LDY $42,SP      ; B1 42
+LDSP $42,SP     ; B2 42
+SBCA $42,SP     ; B3 42
+SUBA $42,SP     ; B4 42
+ADCA $42,SP     ; B5 42
+ADDA $42,SP     ; B6 42
+CMPA $42,SP     ; B7 42
+BITA $42,SP     ; B8 42
+ANDA $42,SP     ; B9 42
+ORA $42,SP      ; BA 42
+EORA $42,SP     ; BB 42
+CMPX $42,SP     ; BC 42
+CMPY $42,SP     ; BD 42
+LEASP $42,SP    ; BE 42
+LDX $42,X       ; C0 42
+LDY $42,X       ; C1 42
+LDSP $42,X      ; C2 42
+SBCA $42,X      ; C3 42
+SUBA $42,X      ; C4 42
+ADCA $42,X      ; C5 42
+ADDA $42,X      ; C6 42
+CMPA $42,X      ; C7 42
+BITA $42,X      ; C8 42
+ANDA $42,X      ; C9 42
+ORA $42,X       ; CA 42
+EORA $42,X      ; CB 42
+LEAX $42,X      ; CC 42
+LEAY $42,Y      ; CD 42
+LEASP $42,X     ; CE 42
+LDX $42,Y       ; D0 42
+LDY $42,Y       ; D1 42
+LDSP $42,Y      ; D2 42
+SBCA $42,Y      ; D3 42
+SUBA $42,Y      ; D4 42
+ADCA $42,Y      ; D5 42
+ADDA $42,Y      ; D6 42
+CMPA $42,Y      ; D7 42
+BITA $42,Y      ; D8 42
+ANDA $42,Y      ; D9 42
+ORA $42,Y       ; DA 42
+EORA $42,Y      ; DB 42
+LEAX $42,SP     ; DC 42
+LEAY $42,SP     ; DD 42
+LEASP $42,Y     ; DE 42
+STA $42,SP      ; E2 42
+STA $42,X       ; E3 42
+STA $42,Y       ; E9 42
+LDA $42,SP      ; F2 42
+LDA $42,X       ; F3 42
+LDA $42,Y       ; F9 42
+STX A,X         ; 60
+STY A,X         ; 61
+STSP A,X        ; 62
+JMP A,X         ; 63
+JSR A,X         ; 64
+CLR A,X         ; 65
+NEG A,X         ; 66
+INC A,X         ; 67
+DEC A,X         ; 68
+TST A,X         ; 69
+COM A,X         ; 6A
+LSL A,X         ; 6B
+LSR A,X         ; 6C
+ROL A,X         ; 6D
+ROR A,X         ; 6E
+ASR A,X         ; 6F
+STX A,Y         ; 80
+STY A,Y         ; 81
+STSP A,Y        ; 82
+JMP A,Y         ; 83
+JSR A,Y         ; 84
+CLR A,Y         ; 85
+NEG A,Y         ; 86
+INC A,Y         ; 87
+DEC A,Y         ; 88
+TST A,Y         ; 89
+COM A,Y         ; 8A
+LSL A,Y         ; 8B
+LSR A,Y         ; 8C
+ROL A,Y         ; 8D
+ROR A,Y         ; 8E
+ASR A,Y         ; 8F
+STA A,X         ; E4
+STA A,Y         ; EA
+LDA A,X         ; F4
+LDA A,Y         ; FA
