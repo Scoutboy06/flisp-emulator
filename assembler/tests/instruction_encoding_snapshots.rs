@@ -8,9 +8,35 @@ const INHERENT: &[&str] = &[
     "PSHA", "PSHX", "PSHY", "PSHC", "PULA", "PULX", "PULY", "PULC", "RTS", "RTI",
 ];
 
+const IMMEDIATE: &[&str] = &[
+    "ANDCC #$42",
+    "ORCC #$42",
+    "LDX #$42",
+    "LDY #$42",
+    "LDSP #$42",
+    "SBCA #$42",
+    "SUBA #$42",
+    "ADCA #$42",
+    "ADDA #$42",
+    "CMPA #$42",
+    "BITA #$42",
+    "ANDA #$42",
+    "ORA #$42",
+    "EORA #$42",
+    "CMPX #$42",
+    "CMPY #$42",
+    "CMPSP #$42",
+    "LDA #$42",
+];
+
 #[test]
 fn inherent_instruction_encodings() {
     assert_encoding_snapshot("inherent", INHERENT);
+}
+
+#[test]
+fn immediate_instruction_encodings() {
+    assert_encoding_snapshot("immediate", IMMEDIATE);
 }
 
 fn assert_encoding_snapshot(name: &str, cases: &[&str]) {
